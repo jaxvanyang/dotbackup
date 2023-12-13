@@ -1,0 +1,22 @@
+backup_dir: /tmp/dotfiles
+apps:
+  nvim:
+    files:
+      - ~/.config/nvim/init.lua
+      - ~/.config/nvim/lua
+    pre_backup:
+      - echo nvim pre_backup
+    post_backup:
+      - echo nvim post_backup
+    pre_setup:
+      - echo nvim pre_setup
+    post_setup:
+      - echo nvim post_setup
+pre_backup:
+  - echo pre_backup
+post_backup:
+  - echo post_backup
+pre_setup:
+  - echo pre_setup
+post_setup:
+  - echo post_setup
