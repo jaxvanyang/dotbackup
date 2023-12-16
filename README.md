@@ -14,7 +14,7 @@ You can download [the script](./src/dotbackup.py) and place it to somewhere you 
 
 ```bash
 curl -L -o ~/.local/bin/dotbackup \
-    "https://github.com/jaxvanyang/dotbackup/blob/main/src/dotbackup.py"
+    "https://github.com/jaxvanyang/dotbackup/raw/main/src/dotbackup.py"
 chmod +x ~/.local/bin/dotbackup
 ```
 
@@ -22,7 +22,6 @@ Or you can install from one of these package managers:
 
 - [PyPI](https://pypi.org/project/dotbackup)
 - [AUR](https://aur.archlinux.org/packages/dotbackup)
-
 
 ## Configuration
 
