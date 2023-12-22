@@ -12,7 +12,7 @@ __VERSION__ = "0.0.2"
 ENCODING = "UTF-8"
 
 HOME = os.path.abspath(os.environ["HOME"])
-CONFIG_FILE = "~/.config/dotbackup/config.yml"
+CONFIG_FILE = "~/.config/dotbackup/dotbackup.yml"
 
 
 def eprint(msg):
@@ -64,9 +64,18 @@ class App:
         self.pre_setup = config["pre_setup"] if "pre_setup" in config else []
         self.post_setup = config["post_setup"] if "post_setup" in config else []
 
+    def __str__(self):
+        return str(self.__dict__)
+
+    def __eq__(self, other):
+        if type(self) is type(other):
+            return self.__dict__ == other.__dict__
+        return False
+
     def backup(self, backup_dir):
         log(f"doing {self.name} backup...")
 
+        backup_dir = normfilepath(backup_dir)
         if not os.path.isdir(backup_dir):
             error(f"backup directory not found: {backup_dir}")
 
@@ -98,6 +107,7 @@ class App:
     def setup(self, backup_dir):
         log(f"doing {self.name} setup...")
 
+        backup_dir = normfilepath(backup_dir)
         if not os.path.isdir(backup_dir):
             error(f"backup directory not found: {backup_dir}")
 
@@ -135,7 +145,7 @@ class Config:
         if "backup_dir" not in config_dict:
             error("bad configuration: backup_dir is not set")
 
-        self.backup_dir = normfilepath(config_dict["backup_dir"])
+        self.backup_dir = config_dict["backup_dir"]
         self.pre_backup = (
             config_dict["pre_backup"] if "pre_backup" in config_dict else []
         )
@@ -151,6 +161,15 @@ class Config:
             if "apps" in config_dict
             else []
         )
+
+    def __str__(self):
+        apps = [app.__dict__ for app in self.apps]
+        return str(self.__dict__ | {"apps": apps})
+
+    def __eq__(self, other):
+        if type(self) is type(other):
+            return self.__dict__ == other.__dict__
+        return False
 
     def backup(self):
         run_hooks("pre-backup", self.pre_backup)
@@ -169,7 +188,7 @@ class Config:
         run_hooks("post-setup", self.post_setup)
 
 
-def parse_args():
+def parse_args(args):
     parser = ArgumentParser(
         prog="dotbackup", description="YAML config based backup utility."
     )
@@ -187,15 +206,14 @@ def parse_args():
     )
     parser.add_argument(
         "apps",
-        action="append",
         help=(
             "Applications to be backed up or set up. Omit this to back up or set up "
             "all applications."
         ),
-        nargs="?",
+        nargs="*",
     )
 
-    return parser.parse_args()
+    return parser.parse_args(args)
 
 
 def parse_config(config_file):
@@ -208,8 +226,8 @@ def parse_config(config_file):
     return Config(config_dict)
 
 
-def backup(config, apps):
-    if apps[0] is None:
+def backup(config, apps=[]):
+    if apps == []:
         config.backup()
         return
 
@@ -219,12 +237,14 @@ def backup(config, apps):
         if app not in app_dict:
             error(f"application not configured: {app}")
 
+    run_hooks("pre-backup", config.pre_backup)
     for app in apps:
         app_dict[app].backup(config.backup_dir)
+    run_hooks("post-backup", config.post_backup)
 
 
-def setup(config, apps):
-    if apps[0] is None:
+def setup(config, apps=[]):
+    if apps == []:
         config.setup()
         return
 
@@ -234,12 +254,17 @@ def setup(config, apps):
         if app not in app_dict:
             error(f"application not configured: {app}")
 
+    run_hooks("pre-setup", config.pre_setup)
     for app in apps:
         app_dict[app].setup(config.backup_dir)
+    run_hooks("post-setup", config.post_setup)
 
 
-def main():
-    args = parse_args()
+def main(args=None):
+    if args is None:
+        args = sys.argv[1:]
+
+    args = parse_args(args)
     apps = args.apps
     config = parse_config(normfilepath(args.config))
 
@@ -249,7 +274,7 @@ def main():
         case "setup":
             setup(config, apps)
         case _:  # command argument is omitted
-            if apps[0] is None:
+            if apps == []:
                 apps = [args.command]
             else:
                 apps.insert(0, args.command)
@@ -259,4 +284,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main())  # pragma: no cover
