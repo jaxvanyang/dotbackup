@@ -1,0 +1,9 @@
+backup_dir: ~/backup
+pre_backup:
+  - |
+    hello() {
+      echo 'hello world'
+    }
+
+    hello && \
+      hello
