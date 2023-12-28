@@ -32,18 +32,17 @@ def error(msg):
     sys.exit(1)
 
 
-def run(command):
+def run_sh(command):
     try:
-        subprocess.run(command, shell=True, check=True)
+        subprocess.run("sh -s", shell=True, input=command, text=True, check=True)
     except subprocess.CalledProcessError:
         error(f"command failed: {command}")
 
 
 def run_hooks(typ, hooks):
     for command in hooks:
-        sh_command = f"sh -c '{command}'"
-        log(f"running {typ} hook in shell: {sh_command}")
-        run(sh_command)
+        log(f"running {typ} hook in shell:\n{command}")
+        run_sh(command)
 
 
 def normfilepath(file_path):

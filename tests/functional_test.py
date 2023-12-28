@@ -21,7 +21,7 @@ def test_complex_script(capfd):
     helper.cp(helper.get_config_path("complex_script.yml"), helper.CONFIG_FILE)
 
     dotbackup.main()
-    assert capfd.readouterr().captured.out == "hello world\nhello world\n"
+    assert capfd.readouterr().out == "hello world\nhello world\n"
 
 
 class TestBasic:
