@@ -45,11 +45,17 @@ def run_hooks(typ, hooks):
         run_sh(command)
 
 
+def removeprefix(s, prefix):
+    if s.startswith(prefix):
+        return s[len(prefix) :]
+    return s[:]
+
+
 def normfilepath(file_path):
     if file_path == "~":
         return HOME
     if file_path.startswith("~/"):
-        return os.path.join(HOME, file_path.removeprefix("~/"))
+        return os.path.join(HOME, removeprefix(file_path, "~/"))
 
     return os.path.normpath(file_path)
 
@@ -88,7 +94,7 @@ class App:
                     f"hooks to do backup for files not under the home directory"
                 )
 
-            relative_path = file_path.removeprefix(HOME)
+            relative_path = removeprefix(file_path, HOME)
             dst = os.path.normpath(f"{backup_dir}/{self.name}/{relative_path}")
 
             if os.path.isfile(file_path):
@@ -120,7 +126,7 @@ class App:
                     f"hooks to do backup for files not under the home directory"
                 )
 
-            relative_path = file_path.removeprefix(HOME)
+            relative_path = removeprefix(file_path, HOME)
             src = os.path.normpath(f"{backup_dir}/{self.name}/{relative_path}")
 
             if os.path.isfile(src):
@@ -163,7 +169,7 @@ class Config:
 
     def __str__(self):
         apps = [app.__dict__ for app in self.apps]
-        return str(self.__dict__ | {"apps": apps})
+        return str(self.__dict__.copy().update({"apps": apps}))
 
     def __eq__(self, other):
         if type(self) is type(other):
