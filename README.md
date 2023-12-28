@@ -35,10 +35,10 @@ Or you can install from one of these package managers:
 
 ## Configuration
 
-The default configuration file path is `~/.config/dotbackup/config.yml`, however you can
+The default configuration file path is `~/.config/dotbackup/dotbackup.yml`, however you can
 use the `-c` option to specify another configuration file. Configuration files use YAML
 syntax. If you are new to YAML and want to learn more, see [Learn yaml in Y Minutes](https://learnxinyminutes.com/docs/yaml).
-If you want a quick start, you can take [this](./examples/config.yml) as an example.
+If you want a quick start, you can take [this](./examples/dotbackup.yml) as an example.
 Following are the configuration keyword definitions, undefined keywords are ignored
 (maybe I'll write a validator someday).
 
@@ -83,13 +83,13 @@ Example:
 apps:
   dotbackup:
     pre_backup:
-      - cp /etc/dotbackup/config.yml "$BACKUP_DIR/dotbackup/config.yml"
+      - cp /etc/dotbackup/dotbackup.yml "$BACKUP_DIR/dotbackup/dotbackup.yml"
     post_backup:
       - cd "$BACKUP_DIR" && git add dotbackup
     pre_setup:
       - pip install --user dotbackup || true
     post_setup:
-      - sudo cp "$BACKUP_DIR/dotbackup/config.yml" /etc/dotbackup/config.yml
+      - sudo cp "$BACKUP_DIR/dotbackup/dotbackup.yml" /etc/dotbackup/dotbackup.yml
 ```
 
 ### `<pre_backup|post_backup|pre_setup|post_setup>`
