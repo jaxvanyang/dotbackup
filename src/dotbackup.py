@@ -204,7 +204,7 @@ def parse_args(args):
     if "-h" not in args and "--help" not in args:
         parsed_args, extra_args = parser.parse_known_args(args)
 
-        if len(extra_args) == 0:
+        if not extra_args:
             parsed_args.command = "backup"
         elif extra_args[0] == "backup":
             del extra_args[0]
