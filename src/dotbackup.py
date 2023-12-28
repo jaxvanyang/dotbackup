@@ -32,25 +32,30 @@ def error(msg):
     sys.exit(1)
 
 
-def run(command):
+def run_sh(command):
     try:
-        subprocess.run(command, shell=True, check=True)
+        subprocess.run("sh -s", shell=True, input=command, text=True, check=True)
     except subprocess.CalledProcessError:
         error(f"command failed: {command}")
 
 
 def run_hooks(typ, hooks):
     for command in hooks:
-        sh_command = f"sh -c '{command}'"
-        log(f"running {typ} hook in shell: {sh_command}")
-        run(sh_command)
+        log(f"running {typ} hook in shell:\n{command}")
+        run_sh(command)
+
+
+def removeprefix(s, prefix):
+    if s.startswith(prefix):
+        return s[len(prefix) :]
+    return s[:]
 
 
 def normfilepath(file_path):
     if file_path == "~":
         return HOME
     if file_path.startswith("~/"):
-        return os.path.join(HOME, file_path.removeprefix("~/"))
+        return os.path.join(HOME, removeprefix(file_path, "~/"))
 
     return os.path.normpath(file_path)
 
@@ -89,7 +94,7 @@ class App:
                     f"hooks to do backup for files not under the home directory"
                 )
 
-            relative_path = file_path.removeprefix(HOME)
+            relative_path = removeprefix(file_path, HOME)
             dst = os.path.normpath(f"{backup_dir}/{self.name}/{relative_path}")
 
             if os.path.isfile(file_path):
@@ -121,7 +126,7 @@ class App:
                     f"hooks to do backup for files not under the home directory"
                 )
 
-            relative_path = file_path.removeprefix(HOME)
+            relative_path = removeprefix(file_path, HOME)
             src = os.path.normpath(f"{backup_dir}/{self.name}/{relative_path}")
 
             if os.path.isfile(src):
@@ -164,7 +169,7 @@ class Config:
 
     def __str__(self):
         apps = [app.__dict__ for app in self.apps]
-        return str(self.__dict__ | {"apps": apps})
+        return str(self.__dict__.copy().update({"apps": apps}))
 
     def __eq__(self, other):
         if type(self) is type(other):
@@ -205,7 +210,7 @@ def parse_args(args):
     if "-h" not in args and "--help" not in args:
         parsed_args, extra_args = parser.parse_known_args(args)
 
-        if len(extra_args) == 0:
+        if not extra_args:
             parsed_args.command = "backup"
         elif extra_args[0] == "backup":
             del extra_args[0]
