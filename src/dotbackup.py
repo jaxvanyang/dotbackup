@@ -192,28 +192,58 @@ def parse_args(args):
     parser = ArgumentParser(
         prog="dotbackup", description="YAML config based backup utility."
     )
-
     parser.add_argument(
         "-c",
         "--config",
         default=normfilepath(CONFIG_FILE),
         help=f"Configuration file (default: {CONFIG_FILE}).",
     )
-    parser.add_argument(
-        "command",
-        help="Sub-command to be executed, backup or setup (default: backup).",
-        nargs="?",
+
+    parsed_args = None
+    extra_args = []
+
+    if "-h" not in args and "--help" not in args:
+        parsed_args, extra_args = parser.parse_known_args(args)
+
+        if len(extra_args) == 0:
+            parsed_args.command = "backup"
+        elif extra_args[0] == "backup":
+            del extra_args[0]
+            parsed_args.command = "backup"
+        elif extra_args[0] == "setup":
+            del extra_args[0]
+            parsed_args.command = "setup"
+        else:
+            parsed_args.command = "backup"
+
+    subparsers = parser.add_subparsers(
+        title="subcommands",
+        dest="command",
+        help="Sub-command to be executed (default: backup).",
     )
-    parser.add_argument(
-        "apps",
-        help=(
-            "Applications to be backed up or set up. Omit this to back up or set up "
-            "all applications."
-        ),
+    backup_parser = subparsers.add_parser("backup", help="Do backup.")
+    setup_parser = subparsers.add_parser("setup", help="Do setup.")
+    backup_parser.add_argument(
+        "app",
+        help="Application to be backed up (default: all applications).",
+        nargs="*",
+    )
+    setup_parser.add_argument(
+        "app",
+        help="Application to be set up (default: all applications).",
         nargs="*",
     )
 
-    return parser.parse_args(args)
+    if "-h" in args or "--help" in args:
+        parser.parse_args(args)
+
+    assert parsed_args is not None
+    if parsed_args.command == "backup":
+        parsed_args = backup_parser.parse_args(extra_args, parsed_args)
+    else:
+        parsed_args = backup_parser.parse_args(extra_args, parsed_args)
+
+    return parsed_args
 
 
 def parse_config(config_file):
@@ -265,16 +295,13 @@ def main(args=None):
         args = sys.argv[1:]
 
     args = parse_args(args)
-    apps = args.apps
+    apps = args.app
     config = parse_config(normfilepath(args.config))
 
-    if args.command == "backup" or args.command is None:
+    if args.command == "backup":
         backup(config, apps)
     elif args.command == "setup":
         setup(config, apps)
-    else:  # command argument is omitted
-        apps.insert(0, args.command)
-        backup(config, apps)
 
     return 0
 

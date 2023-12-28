@@ -11,7 +11,7 @@ def _prepare_test(monkeypatch):
 
 def test_parse_args():
     args = dotbackup.parse_args([])
-    assert (args.config, args.command, args.apps) == (helper.CONFIG_FILE, "backup", [])
+    assert (args.config, args.command, args.app) == (helper.CONFIG_FILE, "backup", [])
 
 
 @pytest.mark.parametrize("config_path", helper.CONFIG_PATHS)
