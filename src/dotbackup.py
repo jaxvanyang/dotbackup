@@ -268,17 +268,13 @@ def main(args=None):
     apps = args.apps
     config = parse_config(normfilepath(args.config))
 
-    match args.command:
-        case "backup" | None:
-            backup(config, apps)
-        case "setup":
-            setup(config, apps)
-        case _:  # command argument is omitted
-            if apps == []:
-                apps = [args.command]
-            else:
-                apps.insert(0, args.command)
-            backup(config, apps)
+    if args.command == "backup" or args.command is None:
+        backup(config, apps)
+    elif args.command == "setup":
+        setup(config, apps)
+    else:  # command argument is omitted
+        apps.insert(0, args.command)
+        backup(config, apps)
 
     return 0
 

@@ -89,11 +89,10 @@ def get_config_path(path):
 
 
 def get_config(path):
-    match path:
-        case "basic.yml":
-            return BASIC_CONFIG
-        case "only_hooks.yml":
-            return ONLY_HOOKS_CONFIG
+    if path == "basic.yml":
+        return BASIC_CONFIG
+    elif path == "only_hooks.yml":
+        return ONLY_HOOKS_CONFIG
 
     return dotbackup.parse_config(get_config_path(path))
 
