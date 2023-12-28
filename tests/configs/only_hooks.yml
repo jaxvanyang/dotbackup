@@ -1,0 +1,28 @@
+backup_dir: ~/backup
+apps:
+  app_a:
+    pre_backup:
+      - echo app_a pre_backup
+    post_backup:
+      - echo app_a post_backup
+    pre_setup:
+      - echo app_a pre_setup
+    post_setup:
+      - echo app_a post_setup
+  app_b:
+    pre_backup:
+      - echo app_b pre_backup
+    post_backup:
+      - echo app_b post_backup
+    pre_setup:
+      - echo app_b pre_setup
+    post_setup:
+      - echo app_b post_setup
+pre_backup:
+  - echo pre_backup
+post_backup:
+  - echo post_backup
+pre_setup:
+  - echo pre_setup
+post_setup:
+  - echo post_setup
