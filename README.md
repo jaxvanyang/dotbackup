@@ -8,7 +8,7 @@
 [![Lint: flake8](https://img.shields.io/badge/lint-flake8-blueviolet)](https://github.com/PyCQA/flake8)
 [![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1)](https://pycqa.github.io/isort)
 [![Test: pytest](https://img.shields.io/badge/test-pytest-orange)](https://pytest.org)
-![Codecov](https://img.shields.io/codecov/c/github/jaxvanyang/dotbackup)
+[![Codecov](https://codecov.io/gh/jaxvanyang/dotbackup/graph/badge.svg)](https://codecov.io/gh/jaxvanyang/dotbackup)
 
 YAML config based backup utility. Easy to use yet flexible. With a primary focus on
 dotfile backup & setup, but not limited to dotfiles.
