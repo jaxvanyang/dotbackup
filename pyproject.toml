@@ -9,7 +9,7 @@ description = """\
 	dotfile backup & setup, but not limited to dotfiles.\
 	"""
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 dependencies = ["ruamel.yaml"]
 keywords = ["YAML", "dotfiles", "backup"]
 classifiers = [
