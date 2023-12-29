@@ -2,6 +2,7 @@
 
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/dotbackup)
 [![PyPI - Version](https://img.shields.io/pypi/v/dotbackup)](https://pypi.org/project/dotbackup)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/dotbackup)](https://pypi.org/project/dotbackup)
 [![AUR version](https://img.shields.io/aur/version/dotbackup)](https://aur.archlinux.org/packages/dotbackup)
 
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
