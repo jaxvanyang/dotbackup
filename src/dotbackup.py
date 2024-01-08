@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import logging
 import os
 import shutil
 import subprocess
@@ -15,33 +16,16 @@ HOME = os.path.abspath(os.environ["HOME"])
 CONFIG_FILE = "~/.config/dotbackup/dotbackup.yml"
 
 
-def eprint(msg):
-    print(msg, file=sys.stderr)
-
-
-def log(msg):
-    eprint(f"\033[32mLOG:\033[00m {msg}")
-
-
-def warn(msg):
-    eprint(f"\033[33mWARN:\033[00m {msg}")
-
-
-def error(msg):
-    eprint(f"\033[31mERROR:\033[00m {msg}")
-    sys.exit(1)
-
-
 def run_sh(command):
     try:
         subprocess.run("sh -s", shell=True, input=command, text=True, check=True)
     except subprocess.CalledProcessError:
-        error(f"command failed: {command}")
+        raise RuntimeError(f"command failed: {command}")
 
 
 def run_hooks(typ, hooks):
     for command in hooks:
-        log(f"running {typ} hook in shell:\n{command}")
+        logging.info(f"running {typ} hook in shell:\n{command}")
         run_sh(command)
 
 
@@ -78,18 +62,18 @@ class App:
         return False
 
     def backup(self, backup_dir):
-        log(f"doing {self.name} backup...")
+        logging.info(f"doing {self.name} backup...")
 
         backup_dir = normfilepath(backup_dir)
         if not os.path.isdir(backup_dir):
-            error(f"backup directory not found: {backup_dir}")
+            raise FileNotFoundError(f"backup directory not found: {backup_dir}")
 
         run_hooks(f"{self.name} pre-backup", self.pre_backup)
 
         for file in self.files:
             file_path = normfilepath(file)
             if not file_path.startswith(HOME):
-                error(
+                raise ValueError(
                     f"file or directory not under {HOME}: {file_path}: you can use "
                     f"hooks to do backup for files not under the home directory"
                 )
@@ -98,30 +82,32 @@ class App:
             dst = os.path.normpath(f"{backup_dir}/{self.name}/{relative_path}")
 
             if os.path.isfile(file_path):
-                log(f"copying {file_path} to {dst}...")
+                logging.info(f"copying {file_path} to {dst}...")
                 os.makedirs(os.path.dirname(dst), exist_ok=True)
                 shutil.copy2(file_path, dst)
             elif os.path.isdir(file_path):
-                log(f"copying {file_path} to {dst}...")
+                logging.info(f"copying {file_path} to {dst}...")
                 shutil.copytree(file_path, dst, dirs_exist_ok=True)
             else:
-                warn(f"file or directory not found: {file}: this file backup skipped")
+                logging.warning(
+                    f"file or directory not found: {file}: this file backup skipped"
+                )
 
         run_hooks(f"{self.name} post-backup", self.post_backup)
 
     def setup(self, backup_dir):
-        log(f"doing {self.name} setup...")
+        logging.info(f"doing {self.name} setup...")
 
         backup_dir = normfilepath(backup_dir)
         if not os.path.isdir(backup_dir):
-            error(f"backup directory not found: {backup_dir}")
+            raise FileNotFoundError(f"backup directory not found: {backup_dir}")
 
         run_hooks(f"{self.name} pre-setup", self.pre_setup)
 
         for file in self.files:
             file_path = normfilepath(file)
             if not file_path.startswith(HOME):
-                error(
+                raise ValueError(
                     f"file or directory not under {HOME}: {file_path}: you can use "
                     f"hooks to do backup for files not under the home directory"
                 )
@@ -130,14 +116,16 @@ class App:
             src = os.path.normpath(f"{backup_dir}/{self.name}/{relative_path}")
 
             if os.path.isfile(src):
-                log(f"copying {src} to {file_path}...")
+                logging.info(f"copying {src} to {file_path}...")
                 os.makedirs(os.path.dirname(file_path), exist_ok=True)
                 shutil.copy2(src, file_path)
             elif os.path.isdir(src):
-                log(f"copying {src} to {file_path}...")
+                logging.info(f"copying {src} to {file_path}...")
                 shutil.copytree(src, file_path, dirs_exist_ok=True)
             else:
-                warn(f"file or directory not found: {src}: this file setup skipped")
+                logging.warning(
+                    f"file or directory not found: {src}: this file setup skipped"
+                )
 
         run_hooks(f"{self.name} post-setup", self.post_setup)
 
@@ -145,10 +133,10 @@ class App:
 class Config:
     def __init__(self, config_dict):
         if config_dict is None:
-            error("empty configuration")
+            raise RuntimeError("empty configuration")
 
         if "backup_dir" not in config_dict:
-            error("bad configuration: backup_dir is not set")
+            raise RuntimeError("bad configuration: backup_dir is not set")
 
         self.backup_dir = config_dict["backup_dir"]
         self.pre_backup = (
@@ -253,7 +241,7 @@ def parse_args(args):
 
 def parse_config(config_file):
     if not os.path.isfile(config_file):
-        error(f"configuration file not found: {config_file}")
+        raise FileNotFoundError(f"configuration file not found: {config_file}")
 
     with open(config_file, encoding=ENCODING) as f:
         config_dict = YAML(typ="safe").load(f)
@@ -270,7 +258,7 @@ def backup(config, apps=[]):
 
     for app in apps:
         if app not in app_dict:
-            error(f"application not configured: {app}")
+            raise RuntimeError(f"application not configured: {app}")
 
     run_hooks("pre-backup", config.pre_backup)
     for app in apps:
@@ -287,7 +275,7 @@ def setup(config, apps=[]):
 
     for app in apps:
         if app not in app_dict:
-            error(f"application not configured: {app}")
+            raise RuntimeError(f"application not configured: {app}")
 
     run_hooks("pre-setup", config.pre_setup)
     for app in apps:
@@ -296,17 +284,23 @@ def setup(config, apps=[]):
 
 
 def main(args=None):
-    if args is None:
-        args = sys.argv[1:]
+    logging.basicConfig(style="{", format="\033[32m{levelname[0]}:\033[0m {message}")
 
-    args = parse_args(args)
-    apps = args.app
-    config = parse_config(normfilepath(args.config))
+    try:
+        if args is None:
+            args = sys.argv[1:]
 
-    if args.command == "backup":
-        backup(config, apps)
-    elif args.command == "setup":
-        setup(config, apps)
+        args = parse_args(args)
+        apps = args.app
+        config = parse_config(normfilepath(args.config))
+
+        if args.command == "backup":
+            backup(config, apps)
+        elif args.command == "setup":
+            setup(config, apps)
+    except (RuntimeError, FileNotFoundError, ValueError) as e:
+        logging.error(" ".join(e.args))
+        return 1
 
     return 0
 
