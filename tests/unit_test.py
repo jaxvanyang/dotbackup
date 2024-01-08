@@ -27,15 +27,13 @@ class TestBackup:
         dotbackup.backup(helper.ONLY_HOOKS_CONFIG, apps)
         assert capfd.readouterr().out == helper.generate_hook_out(apps=apps)
 
-    def test_unknown_app(self, capfd):
-        with pytest.raises(SystemExit):
+    def test_unknown_app(self):
+        with pytest.raises(RuntimeError, match=r"application not configured: unknown"):
             dotbackup.backup(helper.ONLY_HOOKS_CONFIG, ["unknown"])
-        assert "application not configured: unknown" in capfd.readouterr().err
 
-    def test_backup_dir_not_found(self, capfd):
-        with pytest.raises(SystemExit):
+    def test_backup_dir_not_found(self):
+        with pytest.raises(FileNotFoundError, match=r"backup directory not found"):
             dotbackup.backup(helper.ONLY_HOOKS_CONFIG)
-        assert "backup directory not found" in capfd.readouterr().err
 
     @pytest.mark.parametrize("apps", helper.APPS_CHOICE)
     def test_default(self, capfd, apps):
@@ -48,15 +46,13 @@ class TestSetup:
         dotbackup.setup(helper.ONLY_HOOKS_CONFIG, apps)
         assert capfd.readouterr().out == helper.generate_hook_out("setup", apps)
 
-    def test_unknown_app(self, capfd):
-        with pytest.raises(SystemExit):
+    def test_unknown_app(self):
+        with pytest.raises(RuntimeError, match=r"application not configured: unknown"):
             dotbackup.setup(helper.ONLY_HOOKS_CONFIG, ["unknown"])
-        assert "application not configured: unknown" in capfd.readouterr().err
 
-    def test_backup_dir_not_found(self, capfd):
-        with pytest.raises(SystemExit):
+    def test_backup_dir_not_found(self):
+        with pytest.raises(FileNotFoundError, match=r"backup directory not found"):
             dotbackup.setup(helper.ONLY_HOOKS_CONFIG)
-        assert "backup directory not found" in capfd.readouterr().err
 
     @pytest.mark.parametrize("apps", helper.APPS_CHOICE)
     def test_default(self, capfd, apps):

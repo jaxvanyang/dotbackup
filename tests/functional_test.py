@@ -9,12 +9,10 @@ def _prepare_test(monkeypatch):
     helper.prepare_test(monkeypatch)
 
 
-def test_empty(capfd):
+def test_empty(caplog):
     helper.create_file(helper.CONFIG_FILE)
-    with pytest.raises(SystemExit):
-        dotbackup.main()
-    captured = capfd.readouterr()
-    assert "empty configuration" in captured.err
+    dotbackup.main()
+    assert "empty configuration" in caplog.text
 
 
 def test_complex_script(capfd):
@@ -37,13 +35,13 @@ class TestBasic:
         helper.cp(helper.get_config_path("basic.yml"), helper.CONFIG_FILE)
         helper.mkdir(helper.BACKUP_DIR)
 
-    def test_skip_backup(self, capfd):
+    def test_skip_backup(self, caplog):
         dotbackup.main()
-        assert capfd.readouterr().err.count("this file backup skipped") == 3
+        assert caplog.text.count("this file backup skipped") == 3
 
-    def test_skip_setup(self, capfd):
+    def test_skip_setup(self, caplog):
         dotbackup.main(["setup"])
-        assert capfd.readouterr().err.count("this file setup skipped") == 3
+        assert caplog.text.count("this file setup skipped") == 3
 
     def test_backup(self, capfd):
         content = helper.random_str()
