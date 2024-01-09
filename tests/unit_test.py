@@ -1,3 +1,5 @@
+import os
+
 import helper
 import pytest
 
@@ -40,6 +42,17 @@ class TestBackup:
         helper.mkdir(helper.BACKUP_DIR)
         self._check_hook_out(capfd, apps)
 
+    def test_ignore(self):
+        helper.mkdir(helper.BACKUP_DIR)
+        for file in helper.IgnoreConfig.files:
+            helper.create_file(file)
+
+        dotbackup.backup(helper.IgnoreConfig.config)
+        assert not os.path.isfile(helper.IgnoreConfig.global_ignore_backup)
+        assert not os.path.isfile(helper.IgnoreConfig.app_ignore_backup)
+        assert os.path.isfile(helper.IgnoreConfig.global_noignore_backup)
+        assert os.path.isfile(helper.IgnoreConfig.app_noignore_backup)
+
 
 class TestSetup:
     def _check_hook_out(self, capfd, apps=None):
@@ -58,6 +71,17 @@ class TestSetup:
     def test_default(self, capfd, apps):
         helper.mkdir(helper.BACKUP_DIR)
         self._check_hook_out(capfd, apps)
+
+    def test_ignore(self):
+        helper.mkdir(helper.BACKUP_DIR)
+        for file in helper.IgnoreConfig.backups:
+            helper.create_file(file)
+
+        dotbackup.setup(helper.IgnoreConfig.config)
+        assert not os.path.isfile(helper.IgnoreConfig.global_ignore_file)
+        assert not os.path.isfile(helper.IgnoreConfig.app_ignore_file)
+        assert os.path.isfile(helper.IgnoreConfig.global_noignore_file)
+        assert os.path.isfile(helper.IgnoreConfig.app_noignore_file)
 
 
 @pytest.mark.parametrize("apps", helper.APPS_CHOICE)
