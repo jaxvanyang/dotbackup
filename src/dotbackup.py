@@ -284,7 +284,11 @@ def setup(config, apps=[]):
 
 
 def main(args=None):
-    logging.basicConfig(style="{", format="\033[32m{levelname[0]}:\033[0m {message}")
+    logging.basicConfig(
+        style="{",
+        level=logging.DEBUG,
+        format="\033[32m{levelname[0]}:\033[0m {message}",
+    )
 
     try:
         if args is None:
