@@ -48,6 +48,7 @@ class App:
     def __init__(self, name, config):
         self.name = name
         self.files = config["files"] if "files" in config else []
+        self.ignore = config["ignore"] if "ignore" in config else []
         self.pre_backup = config["pre_backup"] if "pre_backup" in config else []
         self.post_backup = config["post_backup"] if "post_backup" in config else []
         self.pre_setup = config["pre_setup"] if "pre_setup" in config else []
@@ -61,7 +62,7 @@ class App:
             return self.__dict__ == other.__dict__
         return False
 
-    def backup(self, backup_dir):
+    def backup(self, backup_dir, ignore=[]):
         logging.info(f"doing {self.name} backup...")
 
         backup_dir = normfilepath(backup_dir)
@@ -87,7 +88,12 @@ class App:
                 shutil.copy2(file_path, dst)
             elif os.path.isdir(file_path):
                 logging.info(f"copying {file_path} to {dst}...")
-                shutil.copytree(file_path, dst, dirs_exist_ok=True)
+                shutil.copytree(
+                    file_path,
+                    dst,
+                    dirs_exist_ok=True,
+                    ignore=shutil.ignore_patterns(*ignore, *self.ignore),
+                )
             else:
                 logging.warning(
                     f"file or directory not found: {file}: this file backup skipped"
@@ -95,7 +101,7 @@ class App:
 
         run_hooks(f"{self.name} post-backup", self.post_backup)
 
-    def setup(self, backup_dir):
+    def setup(self, backup_dir, ignore=[]):
         logging.info(f"doing {self.name} setup...")
 
         backup_dir = normfilepath(backup_dir)
@@ -121,7 +127,12 @@ class App:
                 shutil.copy2(src, file_path)
             elif os.path.isdir(src):
                 logging.info(f"copying {src} to {file_path}...")
-                shutil.copytree(src, file_path, dirs_exist_ok=True)
+                shutil.copytree(
+                    src,
+                    file_path,
+                    dirs_exist_ok=True,
+                    ignore=shutil.ignore_patterns(*ignore, *self.ignore),
+                )
             else:
                 logging.warning(
                     f"file or directory not found: {src}: this file setup skipped"
@@ -139,6 +150,7 @@ class Config:
             raise RuntimeError("bad configuration: backup_dir is not set")
 
         self.backup_dir = config_dict["backup_dir"]
+        self.ignore = config_dict["ignore"] if "ignore" in config_dict else []
         self.pre_backup = (
             config_dict["pre_backup"] if "pre_backup" in config_dict else []
         )
@@ -168,7 +180,7 @@ class Config:
         run_hooks("pre-backup", self.pre_backup)
 
         for app in self.apps:
-            app.backup(self.backup_dir)
+            app.backup(self.backup_dir, self.ignore)
 
         run_hooks("post-backup", self.post_backup)
 
@@ -176,7 +188,7 @@ class Config:
         run_hooks("pre-setup", self.pre_setup)
 
         for app in self.apps:
-            app.setup(self.backup_dir)
+            app.setup(self.backup_dir, self.ignore)
 
         run_hooks("post-setup", self.post_setup)
 
