@@ -45,7 +45,7 @@ Following are the configuration keyword definitions, undefined keywords are igno
 
 ### `backup_dir`
 
-Required. The directory where backup files store.
+Required. The directory where backup files be stored.
 
 Example:
 
@@ -70,6 +70,21 @@ apps:
       - ~/.config/nvim/lua
 ```
 
+### `apps.<app>.ignore`
+
+Optional. The Application ignored file patterns. Files that matches these patterns will
+be ignored in backup and setup. But files which are directly specified in [`apps.<app>.files`](#appsappfiles)
+will not be ignored.
+
+Example:
+
+```yaml
+apps:
+  nvim:
+    files: [~/.config/nvim]
+    ignore: ['*.json']
+```
+
 ### `apps.<app>.<pre_backup|post_backup|pre_setup|post_setup>`
 
 Optional. The hooks to be executed before/after `<app>` backup/setup, `<app>` can be any
@@ -91,6 +106,21 @@ apps:
       - pip install --user dotbackup || true
     post_setup:
       - sudo cp "$BACKUP_DIR/dotbackup/dotbackup.yml" /etc/dotbackup/dotbackup.yml
+```
+
+### `ignore`
+
+Optional. The global ignored file patterns. Files that matches these patterns will be
+ignored in backup and setup. But files which are directly specified in [`apps.<app>.files`](#appsappfiles)
+will not be ignored.
+
+Example:
+
+```yaml
+apps:
+  nvim:
+    files: [~/.config/nvim]
+ignore: ['.git']
 ```
 
 ### `<pre_backup|post_backup|pre_setup|post_setup>`
