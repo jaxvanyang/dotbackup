@@ -60,7 +60,47 @@ ONLY_HOOKS_DICT = {
 ONLY_HOOKS_CONFIG = dotbackup.Config(ONLY_HOOKS_DICT)
 
 APPS_CHOICE = [[], ["app_a"], ["app_b"], ["app_a", "app_b"], ["app_b", "app_a"]]
-CONFIG_PATHS = ["basic.yml", "only_hooks.yml", "complex_script.yml"]
+CONFIG_PATHS = ["basic.yml", "only_hooks.yml", "complex_script.yml", "ignore.yml"]
+
+
+class IgnoreConfig:
+    dict = {
+        "backup_dir": "~/backup",
+        "apps": {
+            "app": {
+                "files": [
+                    "~/.config/app",
+                    "~/.config/app/global_ignore",
+                    "~/.config/app/app_ignore",
+                ],
+                "ignore": ["app_ignore"],
+            },
+        },
+        "ignore": ["global_ignore"],
+    }
+    config = dotbackup.Config(dict)
+
+    global_ignore_file = f"{CONFIG_DIR}/app/ignore/global_ignore"
+    app_ignore_file = f"{CONFIG_DIR}/app/ignore/app_ignore"
+    global_noignore_file = f"{CONFIG_DIR}/app/global_ignore"
+    app_noignore_file = f"{CONFIG_DIR}/app/app_ignore"
+    files = (
+        global_ignore_file,
+        app_ignore_file,
+        global_noignore_file,
+        app_noignore_file,
+    )
+
+    global_ignore_backup = f"{BACKUP_DIR}/app/.config/app/ignore/global_ignore"
+    app_ignore_backup = f"{BACKUP_DIR}/app/.config/app/ignore/app_ignore"
+    global_noignore_backup = f"{BACKUP_DIR}/app/.config/app/global_ignore"
+    app_noignore_backup = f"{BACKUP_DIR}/app/.config/app/app_ignore"
+    backups = (
+        global_ignore_backup,
+        app_ignore_backup,
+        global_noignore_backup,
+        app_noignore_backup,
+    )
 
 
 def rm_test_home():
@@ -93,6 +133,8 @@ def get_config(path):
         return BASIC_CONFIG
     elif path == "only_hooks.yml":
         return ONLY_HOOKS_CONFIG
+    elif path == "ignore.yml":
+        return IgnoreConfig.config
 
     return dotbackup.parse_config(get_config_path(path))
 

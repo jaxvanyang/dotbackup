@@ -1,0 +1,11 @@
+backup_dir: ~/backup
+apps:
+  app:
+    files:
+      - ~/.config/app # contains ignore/global_ignore, ignore/app_ignore
+      - ~/.config/app/global_ignore
+      - ~/.config/app/app_ignore
+    ignore:
+      - app_ignore
+ignore:
+  - global_ignore
