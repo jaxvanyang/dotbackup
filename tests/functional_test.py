@@ -22,6 +22,14 @@ def test_complex_script(capfd):
     assert capfd.readouterr().out == "hello world\nhello world\n"
 
 
+def test_version(capfd):
+    dotbackup.main(["-V"])
+    assert capfd.readouterr().out == f"dotbackup {dotbackup.__VERSION__}\n"
+
+    dotbackup.main(["--version"])
+    assert capfd.readouterr().out == f"dotbackup {dotbackup.__VERSION__}\n"
+
+
 class TestBasic:
     a_txt = f"{helper.CONFIG_DIR}/app_a/a.txt"
     b1_txt = f"{helper.CONFIG_DIR}/app_b/b1.txt"

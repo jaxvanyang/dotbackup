@@ -203,6 +203,12 @@ def parse_args(args):
         default=normfilepath(CONFIG_FILE),
         help=f"Configuration file (default: {CONFIG_FILE}).",
     )
+    parser.add_argument(
+        "-V",
+        "--version",
+        action="store_true",
+        help="Print the dotbackup version number and exit.",
+    )
 
     parsed_args = None
     extra_args = []
@@ -307,6 +313,10 @@ def main(args=None):
             args = sys.argv[1:]
 
         args = parse_args(args)
+        if args.version:
+            print(f"dotbackup {__VERSION__}")
+            return 0
+
         apps = args.app
         config = parse_config(normfilepath(args.config))
 
