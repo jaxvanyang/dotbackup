@@ -47,12 +47,12 @@ def normfilepath(file_path):
 class App:
     def __init__(self, name, config):
         self.name = name
-        self.files = config["files"] if "files" in config else []
-        self.ignore = config["ignore"] if "ignore" in config else []
-        self.pre_backup = config["pre_backup"] if "pre_backup" in config else []
-        self.post_backup = config["post_backup"] if "post_backup" in config else []
-        self.pre_setup = config["pre_setup"] if "pre_setup" in config else []
-        self.post_setup = config["post_setup"] if "post_setup" in config else []
+        self.files = config.get("files", [])
+        self.ignore = config.get("ignore", [])
+        self.pre_backup = config.get("pre_backup", [])
+        self.post_backup = config.get("post_backup", [])
+        self.pre_setup = config.get("pre_setup", [])
+        self.post_setup = config.get("post_setup", [])
 
     def __str__(self):
         return str(self.__dict__)
@@ -150,22 +150,12 @@ class Config:
             raise RuntimeError("bad configuration: backup_dir is not set")
 
         self.backup_dir = config_dict["backup_dir"]
-        self.ignore = config_dict["ignore"] if "ignore" in config_dict else []
-        self.pre_backup = (
-            config_dict["pre_backup"] if "pre_backup" in config_dict else []
-        )
-        self.post_backup = (
-            config_dict["post_backup"] if "post_backup" in config_dict else []
-        )
-        self.pre_setup = config_dict["pre_setup"] if "pre_setup" in config_dict else []
-        self.post_setup = (
-            config_dict["post_setup"] if "post_setup" in config_dict else []
-        )
-        self.apps = (
-            [App(k, v) for (k, v) in config_dict["apps"].items()]
-            if "apps" in config_dict
-            else []
-        )
+        self.ignore = config_dict.get("ignore", [])
+        self.pre_backup = config_dict.get("pre_backup", [])
+        self.post_backup = config_dict.get("post_backup", [])
+        self.pre_setup = config_dict.get("pre_setup", [])
+        self.post_setup = config_dict.get("post_setup", [])
+        self.apps = [App(k, v) for (k, v) in config_dict.get("apps", {}).items()]
 
     def __str__(self):
         apps = [app.__dict__ for app in self.apps]
