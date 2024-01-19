@@ -139,7 +139,8 @@ def get_config(path):
     return dotbackup.parse_config(get_config_path(path))
 
 
-def random_str(length=50):
+def random_str(length=0):
+    length = length or random.randint(1, 50)
     return "".join(random.choices(string.ascii_uppercase, k=length))
 
 
