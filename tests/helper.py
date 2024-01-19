@@ -1,3 +1,4 @@
+import filecmp
 import os
 import random
 import shutil
@@ -60,7 +61,21 @@ ONLY_HOOKS_DICT = {
 ONLY_HOOKS_CONFIG = dotbackup.Config(ONLY_HOOKS_DICT)
 
 APPS_CHOICE = [[], ["app_a"], ["app_b"], ["app_a", "app_b"], ["app_b", "app_a"]]
-CONFIG_PATHS = ["basic.yml", "only_hooks.yml", "complex_script.yml", "ignore.yml"]
+CONFIG_PATHS = [
+    "basic.yml",
+    "clean.yml",
+    "complex_script.yml",
+    "ignore.yml",
+    "only_hooks.yml",
+]
+
+
+class CleanConfig:
+    dict = {
+        "backup_dir": "~/backup",
+        "clean": True,
+    }
+    config = dotbackup.Config(dict)
 
 
 class IgnoreConfig:
@@ -133,13 +148,16 @@ def get_config(path):
         return BASIC_CONFIG
     elif path == "only_hooks.yml":
         return ONLY_HOOKS_CONFIG
+    elif path == "clean.yml":
+        return CleanConfig.config
     elif path == "ignore.yml":
         return IgnoreConfig.config
 
     return dotbackup.parse_config(get_config_path(path))
 
 
-def random_str(length=50):
+def random_str(length=0):
+    length = length or random.randint(1, 50)
     return "".join(random.choices(string.ascii_uppercase, k=length))
 
 
@@ -178,3 +196,8 @@ def generate_hook_out(command="backup", apps=[]):
     out += f"post_{command}\n"
 
     return out
+
+
+def dirdiff(dir1, dir2):
+    dcmp = filecmp.dircmp(dir1, dir2)
+    return not (dcmp.left_only or dcmp.right_only or dcmp.diff_files)

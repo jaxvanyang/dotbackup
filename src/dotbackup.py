@@ -47,12 +47,12 @@ def normfilepath(file_path):
 class App:
     def __init__(self, name, config):
         self.name = name
-        self.files = config["files"] if "files" in config else []
-        self.ignore = config["ignore"] if "ignore" in config else []
-        self.pre_backup = config["pre_backup"] if "pre_backup" in config else []
-        self.post_backup = config["post_backup"] if "post_backup" in config else []
-        self.pre_setup = config["pre_setup"] if "pre_setup" in config else []
-        self.post_setup = config["post_setup"] if "post_setup" in config else []
+        self.files = config.get("files", [])
+        self.ignore = config.get("ignore", [])
+        self.pre_backup = config.get("pre_backup", [])
+        self.post_backup = config.get("post_backup", [])
+        self.pre_setup = config.get("pre_setup", [])
+        self.post_setup = config.get("post_setup", [])
 
     def __str__(self):
         return str(self.__dict__)
@@ -62,7 +62,15 @@ class App:
             return self.__dict__ == other.__dict__
         return False
 
-    def backup(self, backup_dir, ignore=[]):
+    def _delete_old(self, path):
+        if os.path.isfile(path):
+            logging.info(f"found old {path}, deleting...")
+            os.remove(path)
+        elif os.path.isdir(path):
+            logging.info(f"found old {path}, deleting...")
+            shutil.rmtree(path)
+
+    def backup(self, backup_dir, clean=False, ignore=[]):
         logging.info(f"doing {self.name} backup...")
 
         backup_dir = normfilepath(backup_dir)
@@ -81,6 +89,9 @@ class App:
 
             relative_path = removeprefix(file_path, HOME)
             dst = os.path.normpath(f"{backup_dir}/{self.name}/{relative_path}")
+
+            if clean:
+                self._delete_old(dst)
 
             if os.path.isfile(file_path):
                 logging.info(f"copying {file_path} to {dst}...")
@@ -101,7 +112,7 @@ class App:
 
         run_hooks(f"{self.name} post-backup", self.post_backup)
 
-    def setup(self, backup_dir, ignore=[]):
+    def setup(self, backup_dir, clean=False, ignore=[]):
         logging.info(f"doing {self.name} setup...")
 
         backup_dir = normfilepath(backup_dir)
@@ -120,6 +131,9 @@ class App:
 
             relative_path = removeprefix(file_path, HOME)
             src = os.path.normpath(f"{backup_dir}/{self.name}/{relative_path}")
+
+            if clean:
+                self._delete_old(file_path)
 
             if os.path.isfile(src):
                 logging.info(f"copying {src} to {file_path}...")
@@ -150,22 +164,14 @@ class Config:
             raise RuntimeError("bad configuration: backup_dir is not set")
 
         self.backup_dir = config_dict["backup_dir"]
-        self.ignore = config_dict["ignore"] if "ignore" in config_dict else []
-        self.pre_backup = (
-            config_dict["pre_backup"] if "pre_backup" in config_dict else []
-        )
-        self.post_backup = (
-            config_dict["post_backup"] if "post_backup" in config_dict else []
-        )
-        self.pre_setup = config_dict["pre_setup"] if "pre_setup" in config_dict else []
-        self.post_setup = (
-            config_dict["post_setup"] if "post_setup" in config_dict else []
-        )
-        self.apps = (
-            [App(k, v) for (k, v) in config_dict["apps"].items()]
-            if "apps" in config_dict
-            else []
-        )
+        self.clean = config_dict.get("clean", False)
+        assert isinstance(self.clean, bool)
+        self.ignore = config_dict.get("ignore", [])
+        self.apps = [App(k, v) for (k, v) in config_dict.get("apps", {}).items()]
+        self.pre_backup = config_dict.get("pre_backup", [])
+        self.post_backup = config_dict.get("post_backup", [])
+        self.pre_setup = config_dict.get("pre_setup", [])
+        self.post_setup = config_dict.get("post_setup", [])
 
     def __str__(self):
         apps = [app.__dict__ for app in self.apps]
@@ -180,7 +186,7 @@ class Config:
         run_hooks("pre-backup", self.pre_backup)
 
         for app in self.apps:
-            app.backup(self.backup_dir, self.ignore)
+            app.backup(self.backup_dir, self.clean, self.ignore)
 
         run_hooks("post-backup", self.post_backup)
 
@@ -188,7 +194,7 @@ class Config:
         run_hooks("pre-setup", self.pre_setup)
 
         for app in self.apps:
-            app.setup(self.backup_dir, self.ignore)
+            app.setup(self.backup_dir, self.clean, self.ignore)
 
         run_hooks("post-setup", self.post_setup)
 
@@ -202,6 +208,20 @@ def parse_args(args):
         "--config",
         default=normfilepath(CONFIG_FILE),
         help=f"Configuration file (default: {CONFIG_FILE}).",
+    )
+    parser.add_argument(
+        "-V",
+        "--version",
+        action="store_true",
+        help="Print the dotbackup version number and exit.",
+    )
+    parser.add_argument(
+        "--clean",
+        action="store_true",
+        help=(
+            "Do clean backup or setup, i.e., delete target files before backup or "
+            "setup."
+        ),
     )
 
     parsed_args = None
@@ -307,8 +327,15 @@ def main(args=None):
             args = sys.argv[1:]
 
         args = parse_args(args)
+        if args.version:
+            print(f"dotbackup {__VERSION__}")
+            return 0
+
         apps = args.app
         config = parse_config(normfilepath(args.config))
+
+        if args.clean:
+            config.clean = True
 
         if args.command == "backup":
             backup(config, apps)

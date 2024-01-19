@@ -36,9 +36,9 @@ Or you can install from one of these package managers:
 
 ## Configuration
 
-The default configuration file path is `~/.config/dotbackup/dotbackup.yml`, however you can
-use the `-c` option to specify another configuration file. Configuration files use YAML
-syntax. If you are new to YAML and want to learn more, see [Learn yaml in Y Minutes](https://learnxinyminutes.com/docs/yaml).
+The default configuration file path is `~/.config/dotbackup/dotbackup.yml`, however you
+can use the `-c` option to specify another configuration file. Configuration files use
+YAML syntax. If you are new to YAML and want to learn more, see [Learn yaml in Y Minutes](https://learnxinyminutes.com/docs/yaml).
 If you want a quick start, you can take [this](./examples/dotbackup.yml) as an example.
 Following are the configuration keyword definitions, undefined keywords are ignored
 (maybe I'll write a validator someday).
@@ -51,6 +51,33 @@ Example:
 
 ```yaml
 backup_dir: ~/dotfiles
+```
+
+### `clean`
+
+Optional. Whether to do clean backup/setup, i.e., delete target files before backup or
+setup. The default is `false`. This may be overridden by the command line option
+`--clean`.
+
+Example:
+
+```yaml
+clean: true
+```
+
+### `ignore`
+
+Optional. The global ignored file patterns. Files that matches these patterns will be
+ignored in backup and setup. But files which are directly specified in [`apps.<app>.files`](#appsappfiles)
+will not be ignored.
+
+Example:
+
+```yaml
+apps:
+  nvim:
+    files: [~/.config/nvim]
+ignore: ['.git']
 ```
 
 ### `apps.<app>.files`
@@ -106,21 +133,6 @@ apps:
       - pip install --user dotbackup || true
     post_setup:
       - sudo cp "$BACKUP_DIR/dotbackup/dotbackup.yml" /etc/dotbackup/dotbackup.yml
-```
-
-### `ignore`
-
-Optional. The global ignored file patterns. Files that matches these patterns will be
-ignored in backup and setup. But files which are directly specified in [`apps.<app>.files`](#appsappfiles)
-will not be ignored.
-
-Example:
-
-```yaml
-apps:
-  nvim:
-    files: [~/.config/nvim]
-ignore: ['.git']
 ```
 
 ### `<pre_backup|post_backup|pre_setup|post_setup>`
