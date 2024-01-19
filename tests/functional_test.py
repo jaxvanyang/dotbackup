@@ -87,6 +87,7 @@ class TestBasic:
 
         dotbackup.main(["--clean"])
         assert helper.dirdiff(self.a_config_dir, self.a_backup_dir)
+        assert helper.dirdiff(self.b_config_dir, self.b_backup_dir)
 
     def test_clean_setup(self):
         # config files created here should be cleaned before setup
@@ -97,3 +98,4 @@ class TestBasic:
 
         dotbackup.main(["setup", "--clean"])
         assert helper.dirdiff(self.a_config_dir, self.a_backup_dir)
+        assert helper.dirdiff(self.b_config_dir, self.b_backup_dir)
