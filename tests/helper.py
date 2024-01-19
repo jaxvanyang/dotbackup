@@ -61,7 +61,21 @@ ONLY_HOOKS_DICT = {
 ONLY_HOOKS_CONFIG = dotbackup.Config(ONLY_HOOKS_DICT)
 
 APPS_CHOICE = [[], ["app_a"], ["app_b"], ["app_a", "app_b"], ["app_b", "app_a"]]
-CONFIG_PATHS = ["basic.yml", "only_hooks.yml", "complex_script.yml", "ignore.yml"]
+CONFIG_PATHS = [
+    "basic.yml",
+    "clean.yml",
+    "complex_script.yml",
+    "ignore.yml",
+    "only_hooks.yml",
+]
+
+
+class CleanConfig:
+    dict = {
+        "backup_dir": "~/backup",
+        "clean": True,
+    }
+    config = dotbackup.Config(dict)
 
 
 class IgnoreConfig:
@@ -134,6 +148,8 @@ def get_config(path):
         return BASIC_CONFIG
     elif path == "only_hooks.yml":
         return ONLY_HOOKS_CONFIG
+    elif path == "clean.yml":
+        return CleanConfig.config
     elif path == "ignore.yml":
         return IgnoreConfig.config
 
