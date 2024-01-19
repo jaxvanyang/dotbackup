@@ -1,3 +1,4 @@
+import filecmp
 import os
 import random
 import shutil
@@ -179,3 +180,8 @@ def generate_hook_out(command="backup", apps=[]):
     out += f"post_{command}\n"
 
     return out
+
+
+def dirdiff(dir1, dir2):
+    dcmp = filecmp.dircmp(dir1, dir2)
+    return not (dcmp.left_only or dcmp.right_only or dcmp.diff_files)

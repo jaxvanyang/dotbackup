@@ -31,12 +31,19 @@ def test_version(capfd):
 
 
 class TestBasic:
-    a_txt = f"{helper.CONFIG_DIR}/app_a/a.txt"
-    b1_txt = f"{helper.CONFIG_DIR}/app_b/b1.txt"
-    b2_txt = f"{helper.CONFIG_DIR}/app_b/b2.txt"
-    a_txt_backup = f"{helper.BACKUP_DIR}/app_a/.config/app_a/a.txt"
-    b1_txt_backup = f"{helper.BACKUP_DIR}/app_b/.config/app_b/b1.txt"
-    b2_txt_backup = f"{helper.BACKUP_DIR}/app_b/.config/app_b/b2.txt"
+    a_config_dir = f"{helper.CONFIG_DIR}/app_a"
+    a_backup_dir = f"{helper.BACKUP_DIR}/app_a/.config/app_a"
+    a_txt = f"{a_config_dir}/a.txt"
+    a_legacy_txt = f"{a_config_dir}/a_legacy.txt"
+    a_txt_backup = f"{a_backup_dir}/a.txt"
+    a_legacy_txt_backup = f"{a_backup_dir}/a_legacy.txt"
+
+    b_config_dir = f"{helper.CONFIG_DIR}/app_b"
+    b_backup_dir = f"{helper.BACKUP_DIR}/app_b/.config/app_b"
+    b1_txt = f"{b_config_dir}/b1.txt"
+    b2_txt = f"{b_config_dir}/b2.txt"
+    b1_txt_backup = f"{b_backup_dir}/b1.txt"
+    b2_txt_backup = f"{b_backup_dir}/b2.txt"
 
     @pytest.fixture(autouse=True)
     def _prepare(self):
@@ -52,31 +59,21 @@ class TestBasic:
         assert caplog.text.count("this file setup skipped") == 3
 
     def test_backup(self, capfd):
-        content = helper.random_str()
-        helper.create_file(self.a_txt, content)
-        helper.create_file(self.b1_txt, content)
-        helper.create_file(self.b2_txt, content)
+        helper.create_file(self.a_txt, helper.random_str())
+        helper.create_file(self.b1_txt, helper.random_str())
+        helper.create_file(self.b2_txt, helper.random_str())
 
         dotbackup.main()
-        assert (
-            content
-            == helper.read_file(self.a_txt_backup)
-            == helper.read_file(self.b1_txt_backup)
-            == helper.read_file(self.b2_txt_backup)
-        )
+        assert helper.dirdiff(self.a_config_dir, self.a_backup_dir)
+        assert helper.dirdiff(self.b_config_dir, self.b_backup_dir)
         assert capfd.readouterr().out == helper.generate_hook_out()
 
     def test_setup(self, capfd):
-        content = helper.random_str()
-        helper.create_file(self.a_txt_backup, content)
-        helper.create_file(self.b1_txt_backup, content)
-        helper.create_file(self.b2_txt_backup, content)
+        helper.create_file(self.a_txt_backup, helper.random_str())
+        helper.create_file(self.b1_txt_backup, helper.random_str())
+        helper.create_file(self.b2_txt_backup, helper.random_str())
 
         dotbackup.main(["setup"])
-        assert (
-            content
-            == helper.read_file(self.a_txt)
-            == helper.read_file(self.b1_txt)
-            == helper.read_file(self.b2_txt)
-        )
+        assert helper.dirdiff(self.a_config_dir, self.a_backup_dir)
+        assert helper.dirdiff(self.b_config_dir, self.b_backup_dir)
         assert capfd.readouterr().out == helper.generate_hook_out("setup")
