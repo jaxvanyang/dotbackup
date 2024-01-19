@@ -65,6 +65,21 @@ Example:
 clean: true
 ```
 
+### `ignore`
+
+Optional. The global ignored file patterns. Files that matches these patterns will be
+ignored in backup and setup. But files which are directly specified in [`apps.<app>.files`](#appsappfiles)
+will not be ignored.
+
+Example:
+
+```yaml
+apps:
+  nvim:
+    files: [~/.config/nvim]
+ignore: ['.git']
+```
+
 ### `apps.<app>.files`
 
 Optional. The files to be backed up of the application `<app>`, `<app>` can be any
@@ -118,21 +133,6 @@ apps:
       - pip install --user dotbackup || true
     post_setup:
       - sudo cp "$BACKUP_DIR/dotbackup/dotbackup.yml" /etc/dotbackup/dotbackup.yml
-```
-
-### `ignore`
-
-Optional. The global ignored file patterns. Files that matches these patterns will be
-ignored in backup and setup. But files which are directly specified in [`apps.<app>.files`](#appsappfiles)
-will not be ignored.
-
-Example:
-
-```yaml
-apps:
-  nvim:
-    files: [~/.config/nvim]
-ignore: ['.git']
 ```
 
 ### `<pre_backup|post_backup|pre_setup|post_setup>`

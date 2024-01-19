@@ -150,12 +150,12 @@ class Config:
             raise RuntimeError("bad configuration: backup_dir is not set")
 
         self.backup_dir = config_dict["backup_dir"]
+        self.apps = [App(k, v) for (k, v) in config_dict.get("apps", {}).items()]
         self.ignore = config_dict.get("ignore", [])
         self.pre_backup = config_dict.get("pre_backup", [])
         self.post_backup = config_dict.get("post_backup", [])
         self.pre_setup = config_dict.get("pre_setup", [])
         self.post_setup = config_dict.get("post_setup", [])
-        self.apps = [App(k, v) for (k, v) in config_dict.get("apps", {}).items()]
 
     def __str__(self):
         apps = [app.__dict__ for app in self.apps]
