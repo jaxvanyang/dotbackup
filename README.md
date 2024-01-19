@@ -36,9 +36,9 @@ Or you can install from one of these package managers:
 
 ## Configuration
 
-The default configuration file path is `~/.config/dotbackup/dotbackup.yml`, however you can
-use the `-c` option to specify another configuration file. Configuration files use YAML
-syntax. If you are new to YAML and want to learn more, see [Learn yaml in Y Minutes](https://learnxinyminutes.com/docs/yaml).
+The default configuration file path is `~/.config/dotbackup/dotbackup.yml`, however you
+can use the `-c` option to specify another configuration file. Configuration files use
+YAML syntax. If you are new to YAML and want to learn more, see [Learn yaml in Y Minutes](https://learnxinyminutes.com/docs/yaml).
 If you want a quick start, you can take [this](./examples/dotbackup.yml) as an example.
 Following are the configuration keyword definitions, undefined keywords are ignored
 (maybe I'll write a validator someday).
@@ -51,6 +51,18 @@ Example:
 
 ```yaml
 backup_dir: ~/dotfiles
+```
+
+### `clean`
+
+Optional. Whether to do clean backup/setup, i.e., delete target files before backup or
+setup. The default is `false`. This may be overridden by the command line option
+`--clean`.
+
+Example:
+
+```yaml
+clean: true
 ```
 
 ### `apps.<app>.files`
