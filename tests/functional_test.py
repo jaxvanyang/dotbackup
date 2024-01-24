@@ -89,6 +89,17 @@ class TestBasic:
         assert helper.dirdiff(self.a_config_dir, self.a_backup_dir)
         assert helper.dirdiff(self.b_config_dir, self.b_backup_dir)
 
+    def test_clean_backup_app(self):
+        # backup files created here should be cleaned before backup
+        helper.create_file(self.a_txt, helper.random_str())
+        helper.create_file(self.a_legacy_txt_backup, helper.random_str())
+        helper.create_file(self.b1_txt, helper.random_str())
+        helper.create_file(self.b2_txt_backup, helper.random_str())
+
+        dotbackup.main(["--clean", "app_a", "app_b"])
+        assert helper.dirdiff(self.a_config_dir, self.a_backup_dir)
+        assert helper.dirdiff(self.b_config_dir, self.b_backup_dir)
+
     def test_clean_setup(self):
         # config files created here should be cleaned before setup
         helper.create_file(self.a_txt_backup, helper.random_str())
@@ -97,5 +108,16 @@ class TestBasic:
         helper.create_file(self.b2_txt, helper.random_str())
 
         dotbackup.main(["setup", "--clean"])
+        assert helper.dirdiff(self.a_config_dir, self.a_backup_dir)
+        assert helper.dirdiff(self.b_config_dir, self.b_backup_dir)
+
+    def test_clean_setup_app(self):
+        # config files created here should be cleaned before setup
+        helper.create_file(self.a_txt_backup, helper.random_str())
+        helper.create_file(self.a_legacy_txt, helper.random_str())
+        helper.create_file(self.b1_txt_backup, helper.random_str())
+        helper.create_file(self.b2_txt, helper.random_str())
+
+        dotbackup.main(["setup", "--clean", "app_a", "app_b"])
         assert helper.dirdiff(self.a_config_dir, self.a_backup_dir)
         assert helper.dirdiff(self.b_config_dir, self.b_backup_dir)
