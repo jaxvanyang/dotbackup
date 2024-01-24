@@ -9,7 +9,7 @@ from argparse import ArgumentParser
 
 from ruamel.yaml import YAML
 
-__VERSION__ = "0.0.6"
+__VERSION__ = "0.0.7"
 ENCODING = "UTF-8"
 
 HOME = os.path.abspath(os.environ["HOME"])
