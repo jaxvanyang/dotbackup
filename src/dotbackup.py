@@ -70,7 +70,7 @@ class App:
             logging.info(f"found old {path}, deleting...")
             shutil.rmtree(path)
 
-    def backup(self, backup_dir, clean=False, ignore=[]):
+    def backup(self, backup_dir, clean, ignore):
         logging.info(f"doing {self.name} backup...")
 
         backup_dir = normfilepath(backup_dir)
@@ -112,7 +112,7 @@ class App:
 
         run_hooks(f"{self.name} post-backup", self.post_backup)
 
-    def setup(self, backup_dir, clean=False, ignore=[]):
+    def setup(self, backup_dir, clean, ignore):
         logging.info(f"doing {self.name} setup...")
 
         backup_dir = normfilepath(backup_dir)
@@ -294,7 +294,7 @@ def backup(config, apps=[]):
 
     run_hooks("pre-backup", config.pre_backup)
     for app in apps:
-        app_dict[app].backup(config.backup_dir)
+        app_dict[app].backup(config.backup_dir, config.clean, config.ignore)
     run_hooks("post-backup", config.post_backup)
 
 
@@ -311,7 +311,7 @@ def setup(config, apps=[]):
 
     run_hooks("pre-setup", config.pre_setup)
     for app in apps:
-        app_dict[app].setup(config.backup_dir)
+        app_dict[app].setup(config.backup_dir, config.clean, config.ignore)
     run_hooks("post-setup", config.post_setup)
 
 
