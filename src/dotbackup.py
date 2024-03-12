@@ -6,346 +6,393 @@ import shutil
 import subprocess
 import sys
 from argparse import ArgumentParser
+from pathlib import Path
 
 from ruamel.yaml import YAML
 
 __VERSION__ = "0.0.7"
-ENCODING = "UTF-8"
-
-HOME = os.path.abspath(os.environ["HOME"])
-CONFIG_FILE = "~/.config/dotbackup/dotbackup.yml"
-
-
-def run_sh(command):
-    try:
-        subprocess.run("sh -s", shell=True, input=command, text=True, check=True)
-    except subprocess.CalledProcessError:
-        raise RuntimeError(f"command failed: {command}")
-
-
-def run_hooks(typ, hooks):
-    for command in hooks:
-        logging.info(f"running {typ} hook in shell:\n{command}")
-        run_sh(command)
-
-
-def removeprefix(s, prefix):
-    if s.startswith(prefix):
-        return s[len(prefix) :]
-    return s[:]
-
-
-def normfilepath(file_path):
-    if file_path == "~":
-        return HOME
-    if file_path.startswith("~/"):
-        return os.path.join(HOME, removeprefix(file_path, "~/"))
-
-    return os.path.normpath(file_path)
-
-
-class App:
-    def __init__(self, name, config):
-        self.name = name
-        self.files = config.get("files", [])
-        self.ignore = config.get("ignore", [])
-        self.pre_backup = config.get("pre_backup", [])
-        self.post_backup = config.get("post_backup", [])
-        self.pre_setup = config.get("pre_setup", [])
-        self.post_setup = config.get("post_setup", [])
-
-    def __str__(self):
-        return str(self.__dict__)
-
-    def __eq__(self, other):
-        if type(self) is type(other):
-            return self.__dict__ == other.__dict__
-        return False
-
-    def _delete_old(self, path):
-        if os.path.isfile(path):
-            logging.info(f"found old {path}, deleting...")
-            os.remove(path)
-        elif os.path.isdir(path):
-            logging.info(f"found old {path}, deleting...")
-            shutil.rmtree(path)
-
-    def backup(self, backup_dir, clean, ignore):
-        logging.info(f"doing {self.name} backup...")
-
-        backup_dir = normfilepath(backup_dir)
-        if not os.path.isdir(backup_dir):
-            raise FileNotFoundError(f"backup directory not found: {backup_dir}")
-
-        run_hooks(f"{self.name} pre-backup", self.pre_backup)
-
-        for file in self.files:
-            file_path = normfilepath(file)
-            if not file_path.startswith(HOME):
-                raise ValueError(
-                    f"file or directory not under {HOME}: {file_path}: you can use "
-                    f"hooks to do backup for files not under the home directory"
-                )
-
-            relative_path = removeprefix(file_path, HOME)
-            dst = os.path.normpath(f"{backup_dir}/{self.name}/{relative_path}")
-
-            if clean:
-                self._delete_old(dst)
-
-            if os.path.isfile(file_path):
-                logging.info(f"copying {file_path} to {dst}...")
-                os.makedirs(os.path.dirname(dst), exist_ok=True)
-                shutil.copy2(file_path, dst)
-            elif os.path.isdir(file_path):
-                logging.info(f"copying {file_path} to {dst}...")
-                shutil.copytree(
-                    file_path,
-                    dst,
-                    dirs_exist_ok=True,
-                    ignore=shutil.ignore_patterns(*ignore, *self.ignore),
-                )
-            else:
-                logging.warning(
-                    f"file or directory not found: {file}: this file backup skipped"
-                )
-
-        run_hooks(f"{self.name} post-backup", self.post_backup)
-
-    def setup(self, backup_dir, clean, ignore):
-        logging.info(f"doing {self.name} setup...")
-
-        backup_dir = normfilepath(backup_dir)
-        if not os.path.isdir(backup_dir):
-            raise FileNotFoundError(f"backup directory not found: {backup_dir}")
-
-        run_hooks(f"{self.name} pre-setup", self.pre_setup)
-
-        for file in self.files:
-            file_path = normfilepath(file)
-            if not file_path.startswith(HOME):
-                raise ValueError(
-                    f"file or directory not under {HOME}: {file_path}: you can use "
-                    f"hooks to do backup for files not under the home directory"
-                )
-
-            relative_path = removeprefix(file_path, HOME)
-            src = os.path.normpath(f"{backup_dir}/{self.name}/{relative_path}")
-
-            if clean:
-                self._delete_old(file_path)
-
-            if os.path.isfile(src):
-                logging.info(f"copying {src} to {file_path}...")
-                os.makedirs(os.path.dirname(file_path), exist_ok=True)
-                shutil.copy2(src, file_path)
-            elif os.path.isdir(src):
-                logging.info(f"copying {src} to {file_path}...")
-                shutil.copytree(
-                    src,
-                    file_path,
-                    dirs_exist_ok=True,
-                    ignore=shutil.ignore_patterns(*ignore, *self.ignore),
-                )
-            else:
-                logging.warning(
-                    f"file or directory not found: {src}: this file setup skipped"
-                )
-
-        run_hooks(f"{self.name} post-setup", self.post_setup)
 
 
 class Config:
-    def __init__(self, config_dict):
-        if config_dict is None:
-            raise RuntimeError("empty configuration")
+    """Configuration of dotbackup with helper functions."""
 
-        if "backup_dir" not in config_dict:
-            raise RuntimeError("bad configuration: backup_dir is not set")
+    _DEFAULT_CONFIG_FILE = "~/.config/dotbackup/dotbackup.yml"
+    _YAML = YAML(typ="safe")
 
-        self.backup_dir = config_dict["backup_dir"]
-        self.clean = config_dict.get("clean", False)
-        assert isinstance(self.clean, bool)
-        self.ignore = config_dict.get("ignore", [])
-        self.apps = [App(k, v) for (k, v) in config_dict.get("apps", {}).items()]
-        self.pre_backup = config_dict.get("pre_backup", [])
-        self.post_backup = config_dict.get("post_backup", [])
-        self.pre_setup = config_dict.get("pre_setup", [])
-        self.post_setup = config_dict.get("post_setup", [])
+    def __init__(self, config_dict) -> None:
+        self._dict = dict(config_dict)
 
-    def __str__(self):
-        apps = [app.__dict__ for app in self.apps]
-        return str(self.__dict__.copy().update({"apps": apps}))
+    def __repr__(self) -> str:  # pragma: no cover
+        return repr(self._dict)
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:  # pragma: no cover
         if type(self) is type(other):
-            return self.__dict__ == other.__dict__
-        return False
+            return False
 
-    def backup(self):
-        run_hooks("pre-backup", self.pre_backup)
+        return self._dict == other._dict
 
-        for app in self.apps:
-            app.backup(self.backup_dir, self.clean, self.ignore)
+    @classmethod
+    def fromfile(cls, file):
+        """Return a new Config object based on the YAML configuration file."""
 
-        run_hooks("post-backup", self.post_backup)
+        with open(cls._normpath(file), encoding="utf-8") as f:
+            config_dict = cls._YAML.load(f)
 
-    def setup(self):
-        run_hooks("pre-setup", self.pre_setup)
+            if config_dict is None:
+                raise RuntimeError(f"empty configuration: {file}")
 
-        for app in self.apps:
-            app.setup(self.backup_dir, self.clean, self.ignore)
+        return cls(config_dict)
 
-        run_hooks("post-setup", self.post_setup)
+    @classmethod
+    def parse_args(cls, args):
+        """Return a new Config object based on the parsed CLI arguments."""
 
+        config = cls.fromfile(args.config)
+        if args.clean:
+            config._dict["clean"] = True
+        config._dict["selected_apps"] = list(args.app)
 
-def parse_args(args):
-    parser = ArgumentParser(
-        prog="dotbackup", description="YAML config based backup utility."
-    )
-    parser.add_argument(
-        "-c",
-        "--config",
-        default=normfilepath(CONFIG_FILE),
-        help=f"Configuration file (default: {CONFIG_FILE}).",
-    )
-    parser.add_argument(
-        "-V",
-        "--version",
-        action="store_true",
-        help="Print the dotbackup version number and exit.",
-    )
-    parser.add_argument(
-        "--clean",
-        action="store_true",
-        help=(
-            "Do clean backup or setup, i.e., delete target files before backup or "
-            "setup."
-        ),
-    )
+        return config
 
-    parsed_args = None
-    extra_args = []
+    @classmethod
+    def _add_arguments(cls, parser, typ="backup") -> None:
+        """Add backup or setup arguments to the parser."""
 
-    if "-h" not in args and "--help" not in args:
-        parsed_args, extra_args = parser.parse_known_args(args)
+        assert typ in ("backup", "setup")
 
-        if not extra_args:
-            parsed_args.command = "backup"
-        elif extra_args[0] == "backup":
-            del extra_args[0]
-            parsed_args.command = "backup"
-        elif extra_args[0] == "setup":
-            del extra_args[0]
-            parsed_args.command = "setup"
+        parser.add_argument(
+            "-c",
+            "--config",
+            default=cls._DEFAULT_CONFIG_FILE,
+            help=f"Configuration file (default: {cls._DEFAULT_CONFIG_FILE}).",
+        )
+        parser.add_argument(
+            "-V",
+            "--version",
+            action="store_true",
+            help="Print the version number of dotbackup and exit.",
+        )
+        parser.add_argument(
+            "--clean",
+            action="store_true",
+            help=(
+                f"Do clean {typ}, i.e., delete old "
+                f"{'backup' if typ == 'backup' else 'configuration'} "
+                f"files before {typ}."
+            ),
+        )
+        parser.add_argument(
+            "app",
+            help="Application to be backed up (default: all applications).",
+            nargs="*",
+        )
+
+    @classmethod
+    def main_parser(cls):
+        """Return argument parser for dotbackup.py."""
+
+        parser = ArgumentParser(
+            prog="dotbackup.py", description="YAML config based backup utility."
+        )
+        parser.add_argument(
+            "-V",
+            "--version",
+            action="store_true",
+            help="Print the version number of dotbackup and exit.",
+        )
+        subparsers = parser.add_subparsers(
+            title="subcommands",
+            dest="command",
+            help="Sub-command to be executed.",
+        )
+        backup_parser = subparsers.add_parser(
+            "backup", help="Do backup based on the YAML configuration."
+        )
+        setup_parser = subparsers.add_parser(
+            "setup", help="Do setup based on the YAML configuration."
+        )
+
+        cls._add_arguments(backup_parser)
+        cls._add_arguments(setup_parser, typ="setup")
+
+        return parser
+
+    @classmethod
+    def dotbackup_parser(cls):
+        """Return argument parser for dotbackup."""
+
+        parser = ArgumentParser(
+            prog="dotbackup", description="Do backup based on the YAML configuration."
+        )
+        cls._add_arguments(parser)
+
+        return parser
+
+    @classmethod
+    def dotsetup_parser(cls):
+        """Return argument parser for dotsetup."""
+
+        parser = ArgumentParser(
+            prog="dotsetup", description="Do setup based on the YAML configuration."
+        )
+        cls._add_arguments(parser, typ="setup")
+
+        return parser
+
+    @staticmethod
+    def print_version() -> None:
+        """Print version information."""
+
+        print(f"dotbackup {__VERSION__}")
+
+    @staticmethod
+    def _normpath(path):
+        """Normalize path, expand user home directory, etc."""
+
+        return os.path.normpath(os.path.expanduser(path))
+
+    @staticmethod
+    def _safe_run_hooks(typ, hook_dict, app=None) -> None:
+        if typ not in hook_dict:
+            return
+
+        hook_title = typ if app is None else f"{app} {typ}"
+
+        for command in hook_dict[typ]:
+            logging.info(f"running {hook_title} hook in shell:\n{command}")
+            try:
+                subprocess.run(
+                    "sh -s", shell=True, input=command, text=True, check=True
+                )
+            except subprocess.CalledProcessError:
+                raise RuntimeError(f"command failed: {command}")
+
+    @staticmethod
+    def _delete_old(path: Path):
+        """Delete old file safely."""
+
+        if not path.exists():
+            return
+
+        logging.info(f"found old {path}, deleting...")
+
+        if path.is_dir():
+            shutil.rmtree(path)
         else:
-            parsed_args.command = "backup"
+            path.unlink()
 
-    subparsers = parser.add_subparsers(
-        title="subcommands",
-        dest="command",
-        help="Sub-command to be executed (default: backup).",
-    )
-    backup_parser = subparsers.add_parser("backup", help="Do backup.")
-    setup_parser = subparsers.add_parser("setup", help="Do setup.")
-    backup_parser.add_argument(
-        "app",
-        help="Application to be backed up (default: all applications).",
-        nargs="*",
-    )
-    setup_parser.add_argument(
-        "app",
-        help="Application to be set up (default: all applications).",
-        nargs="*",
-    )
+    @property
+    def _backup_dir(self):
+        return self._dict["backup_dir"]
 
-    if "-h" in args or "--help" in args:
-        parser.parse_args(args)
+    @property
+    def _clean(self):
+        return self._dict.get("clean", False)
 
-    assert parsed_args is not None
-    if parsed_args.command == "backup":
-        parsed_args = backup_parser.parse_args(extra_args, parsed_args)
-    else:
-        parsed_args = backup_parser.parse_args(extra_args, parsed_args)
+    @property
+    def _apps_dict(self):
+        return self._dict.get("apps", dict())
 
-    return parsed_args
+    @property
+    def _selected_apps(self) -> list:
+        """Return a list of selected applications.
+        An empty list indicates all applications.
+        """
+        return self._dict["selected_apps"]
+
+    def _check_apps(self) -> bool:
+        """Check whether every selected app in the configured app list."""
+
+        for app in self._selected_apps:
+            if app not in self._apps_dict:
+                logging.error(f"application not configured: {app}")
+                return False
+
+        return True
+
+    def _get_ignore(self, app_dict):
+        """Return a combination of global and application ignore patterns."""
+
+        global_ignore = self._dict.get("ignore", [])
+        app_ignore = app_dict.get("ignore", [])
+
+        return shutil.ignore_patterns(*global_ignore, *app_ignore)
+
+    def _get_backup_file_path(self, file) -> Path:
+        """Return the backup file path to the source file."""
+
+        src_path = file if isinstance(file, Path) else Path(self._normpath(file))
+        rel_path = src_path.relative_to(Path.home())
+        return self._normpath(self._backup_dir) / rel_path
+
+    def _backup_files(self, app, files, ignore) -> None:
+        """Back up files of app except ignore files."""
+
+        for file in files:
+            src_path = Path(self._normpath(file))
+            dest_path = self._get_backup_file_path(src_path)
+
+            if self._clean:
+                self._delete_old(dest_path)
+
+            if not src_path.exists():
+                logging.warning(f"file not found: {file}: skip backing up this file")
+                continue
+
+            logging.info(f"copying {file} to {dest_path}...")
+
+            if src_path.is_dir():
+                shutil.copytree(src_path, dest_path, dirs_exist_ok=True, ignore=ignore)
+            else:
+                dest_path.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(src_path, dest_path)
+
+    def _setup_files(self, app, files, ignore) -> None:
+        """Set up files of app except ignore files."""
+
+        for file in files:
+            dest_path = Path(self._normpath(file))
+            src_path = self._get_backup_file_path(dest_path)
+
+            if self._clean:
+                self._delete_old(dest_path)
+
+            if not src_path.exists():
+                logging.warning(
+                    f"file not found: {src_path}: skip setting up this file"
+                )
+                continue
+
+            logging.info(f"copying {src_path} to {dest_path}...")
+
+            if src_path.is_dir():
+                shutil.copytree(src_path, dest_path, dirs_exist_ok=True, ignore=ignore)
+            else:
+                dest_path.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(src_path, dest_path)
+
+    def _set_env(self) -> None:
+        """Set environment variable."""
+        os.environ["BACKUP_DIR"] = self._backup_dir
+
+    def backup(self) -> int:
+        """Do backup."""
+
+        if not self._check_apps():
+            return 1
+
+        self._set_env()
+
+        self._safe_run_hooks("pre_backup", self._dict)
+
+        apps = self._selected_apps if self._selected_apps else self._apps_dict.keys()
+
+        for app in apps:
+            app_dict = self._apps_dict[app]
+
+            logging.info(f"doing {app} backup...")
+            self._safe_run_hooks("pre_backup", app_dict, app=app)
+
+            if "files" in app_dict:
+                self._backup_files(app, app_dict["files"], self._get_ignore(app_dict))
+
+            self._safe_run_hooks("post_backup", app_dict, app=app)
+
+        self._safe_run_hooks("post_backup", self._dict)
+
+        return 0
+
+    def setup(self) -> int:
+        """Do setup."""
+
+        if not self._check_apps():
+            return 1
+
+        self._set_env()
+
+        self._safe_run_hooks("pre_setup", self._dict)
+
+        apps = self._selected_apps if self._selected_apps else self._apps_dict.keys()
+
+        for app in apps:
+            app_dict = self._apps_dict[app]
+
+            logging.info(f"doing {app} setup...")
+            self._safe_run_hooks("pre_setup", app_dict, app=app)
+
+            if "files" in app_dict:
+                self._setup_files(app, app_dict["files"], self._get_ignore(app_dict))
+
+            self._safe_run_hooks("post_setup", app_dict, app=app)
+
+        self._safe_run_hooks("post_setup", self._dict)
+
+        return 0
 
 
-def parse_config(config_file):
-    if not os.path.isfile(config_file):
-        raise FileNotFoundError(f"configuration file not found: {config_file}")
+def dotbackup(args=None) -> int:
+    """The dotbackup CLI"""
 
-    with open(config_file, encoding=ENCODING) as f:
-        config_dict = YAML(typ="safe").load(f)
+    if args is None:
+        args = sys.argv[1:]
 
-    return Config(config_dict)
+    parser = Config.dotbackup_parser()
+    args = parser.parse_args(args)
 
-
-def backup(config, apps=[]):
-    if apps == []:
-        config.backup()
-        return
-
-    app_dict = {app.name: app for app in config.apps}
-
-    for app in apps:
-        if app not in app_dict:
-            raise RuntimeError(f"application not configured: {app}")
-
-    run_hooks("pre-backup", config.pre_backup)
-    for app in apps:
-        app_dict[app].backup(config.backup_dir, config.clean, config.ignore)
-    run_hooks("post-backup", config.post_backup)
-
-
-def setup(config, apps=[]):
-    if apps == []:
-        config.setup()
-        return
-
-    app_dict = {app.name: app for app in config.apps}
-
-    for app in apps:
-        if app not in app_dict:
-            raise RuntimeError(f"application not configured: {app}")
-
-    run_hooks("pre-setup", config.pre_setup)
-    for app in apps:
-        app_dict[app].setup(config.backup_dir, config.clean, config.ignore)
-    run_hooks("post-setup", config.post_setup)
-
-
-def main(args=None):
-    logging.basicConfig(
-        style="{",
-        level=logging.DEBUG,
-        format="\033[32m{levelname[0]}:\033[0m {message}",
-    )
+    if args.version:
+        Config.print_version()
+        return 0
 
     try:
-        if args is None:
-            args = sys.argv[1:]
-
-        args = parse_args(args)
-        if args.version:
-            print(f"dotbackup {__VERSION__}")
-            return 0
-
-        apps = args.app
-        config = parse_config(normfilepath(args.config))
-
-        if args.clean:
-            config.clean = True
-
-        if args.command == "backup":
-            backup(config, apps)
-        elif args.command == "setup":
-            setup(config, apps)
-    except (RuntimeError, FileNotFoundError, ValueError) as e:
+        return Config.parse_args(args).backup()
+    except RuntimeError as e:
         logging.error(" ".join(e.args))
         return 1
 
-    return 0
+
+def dotsetup(args=None) -> int:
+    """The dotsetup CLI"""
+
+    if args is None:
+        args = sys.argv[1:]
+
+    parser = Config.dotsetup_parser()
+    args = parser.parse_args(args)
+
+    if args.version:
+        Config.print_version()
+        return 0
+
+    try:
+        return Config.parse_args(args).setup()
+    except RuntimeError as e:
+        logging.error(" ".join(e.args))
+        return 1
+
+
+def main(args=None):
+    """The dotbackup.py CLI"""
+
+    if args is None:
+        args = sys.argv[1:]
+
+    parser = Config.main_parser()
+    args = parser.parse_args(args)
+
+    if args.version:
+        Config.print_version()
+        return 0
+
+    try:
+        config = Config.parse_args(args)
+    except RuntimeError as e:
+        logging.error(" ".join(e.args))
+        return 1
+
+    if args.command == "backup":
+        return config.backup()
+    else:
+        return config.setup()
 
 
 if __name__ == "__main__":

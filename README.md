@@ -120,8 +120,6 @@ these hooks to do advance operation.
 
 Example:
 
-> FIXME: defining `BACKUP_DIR` is not implemented yet.
-
 ```yaml
 apps:
   dotbackup:
@@ -142,8 +140,6 @@ list of commands, command are passed to `sh -c`. You can use these hooks to do a
 operation.
 
 Example:
-
-> FIXME: defining `BACKUP_DIR` is not implemented yet.
 
 ```yaml
 pre_backup:

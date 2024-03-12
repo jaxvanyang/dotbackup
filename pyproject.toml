@@ -26,7 +26,8 @@ classifiers = [
 ]
 
 [project.scripts]
-dotbackup = "dotbackup:main"
+dotbackup = "dotbackup:dotbackup"
+dotsetup = "dotbackup:dotsetup"
 
 [project.urls]
 Homepage = "https://github.com/jaxvanyang/dotbackup"

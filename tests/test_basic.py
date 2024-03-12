@@ -1,6 +1,5 @@
 """Test with basic.yml."""
 
-
 import helper
 import pytest
 from ruamel.yaml import os
@@ -27,7 +26,7 @@ class TestBasic:
     def _prepare(self):
         helper.cp(helper.get_config_path("basic"), helper.CONFIG_FILE)
 
-    def _generate_hooks_out(self, command: str, apps: list[str]) -> str:
+    def _generate_hooks_out(self, command: str, apps: list) -> str:
         """Generate hooks stdout."""
 
         out = f"pre_{command} {self._config._backup_dir}\n"

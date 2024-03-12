@@ -65,7 +65,7 @@ def cp(src, dst):
         shutil.copy2(src, dst)
 
 
-def file_iterator(config: Config) -> Iterator[str]:
+def file_iterator(config: Config) -> Iterator:
     """Iterate files in the config."""
 
     for _, app_dict in config._apps_dict.items():
@@ -76,7 +76,7 @@ def file_iterator(config: Config) -> Iterator[str]:
             yield file
 
 
-def backup_file_iterator(config: Config) -> Iterator[str]:
+def backup_file_iterator(config: Config) -> Iterator:
     """Iterate backup files of the config."""
 
     return map(lambda f: str(config._get_backup_file_path(f)), file_iterator(config))
@@ -124,7 +124,7 @@ def dirdiff(dir1: str, dir2: str, recursive=True) -> bool:
     return recursive_check(dcmp)
 
 
-def validate(files1: Iterable[str], files2: Iterable[str], recursive=True) -> bool:
+def validate(files1: Iterable, files2: Iterable, recursive=True) -> bool:
     """Validate the backup or setup.
 
     Return True if each existing file in files1 is identical to coresponding file in
