@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 from argparse import ArgumentParser
+from logging import Formatter, Logger, LogRecord
 from pathlib import Path
 
 from ruamel.yaml import YAML
@@ -13,11 +14,44 @@ from ruamel.yaml import YAML
 __VERSION__ = "0.0.7"
 
 
+class ColorFormatter(Formatter):
+    def format(self, record: LogRecord) -> str:  # pragma: no cover
+        template = "\x1b[%dm{}\x1b[00m"
+
+        if record.levelno == logging.INFO:
+            template %= 32
+        elif record.levelno == logging.WARNING:
+            template %= 33
+        elif record.levelno == logging.ERROR:
+            template %= 31
+        elif record.levelno == logging.CRITICAL:
+            template %= 91
+        else:
+            template %= 36
+
+        return template.format(super().format(record))
+
+
+def init_logger() -> Logger:
+    """Initialize the logger and return it."""
+
+    formatter = ColorFormatter("%(levelname)s: %(message)s")
+    handler = logging.StreamHandler()
+    logger = logging.getLogger(__name__)
+
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+
+    return logger
+
+
 class Config:
     """Configuration of dotbackup with helper functions."""
 
     _DEFAULT_CONFIG_FILE = "~/.config/dotbackup/dotbackup.yml"
     _YAML = YAML(typ="safe")
+    _LOGGER = logging.getLogger(__name__)
 
     def __init__(self, config_dict) -> None:
         self._dict = dict(config_dict)
@@ -46,6 +80,8 @@ class Config:
     @classmethod
     def parse_args(cls, args):
         """Return a new Config object based on the parsed CLI arguments."""
+
+        cls._LOGGER.setLevel(args.log_level)
 
         config = cls.fromfile(args.config)
         if args.clean:
@@ -82,6 +118,12 @@ class Config:
             ),
         )
         parser.add_argument(
+            "--log-level",
+            default="INFO",
+            choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
+            help="Set the log level (default: INFO).",
+        )
+        parser.add_argument(
             "app",
             help="Application to be backed up (default: all applications).",
             nargs="*",
@@ -99,6 +141,12 @@ class Config:
             "--version",
             action="store_true",
             help="Print the version number of dotbackup and exit.",
+        )
+        parser.add_argument(
+            "--log-level",
+            default="INFO",
+            choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
+            help="Set the log level (default: INFO).",
         )
         subparsers = parser.add_subparsers(
             title="subcommands",
@@ -151,36 +199,6 @@ class Config:
 
         return os.path.normpath(os.path.expanduser(path))
 
-    @staticmethod
-    def _safe_run_hooks(typ, hook_dict, app=None) -> None:
-        if typ not in hook_dict:
-            return
-
-        hook_title = typ if app is None else f"{app} {typ}"
-
-        for command in hook_dict[typ]:
-            logging.info(f"running {hook_title} hook in shell:\n{command}")
-            try:
-                subprocess.run(
-                    "sh -s", shell=True, input=command, text=True, check=True
-                )
-            except subprocess.CalledProcessError:
-                raise RuntimeError(f"command failed: {command}")
-
-    @staticmethod
-    def _delete_old(path: Path):
-        """Delete old file safely."""
-
-        if not path.exists():
-            return
-
-        logging.info(f"found old {path}, deleting...")
-
-        if path.is_dir():
-            shutil.rmtree(path)
-        else:
-            path.unlink()
-
     @property
     def _backup_dir(self):
         return self._dict["backup_dir"]
@@ -200,12 +218,40 @@ class Config:
         """
         return self._dict["selected_apps"]
 
+    def _safe_run_hooks(self, typ, hook_dict, app=None) -> None:
+        if typ not in hook_dict:
+            return
+
+        hook_title = typ if app is None else f"{app} {typ}"
+
+        for command in hook_dict[typ]:
+            self._LOGGER.info(f"running {hook_title} hook in shell:\n{command}")
+            try:
+                subprocess.run(
+                    "sh -s", shell=True, input=command, text=True, check=True
+                )
+            except subprocess.CalledProcessError:
+                raise RuntimeError(f"command failed: {command}")
+
+    def _delete_old(self, path: Path):
+        """Delete old file safely."""
+
+        if not path.exists():
+            return
+
+        self._LOGGER.info(f"found old {path}, deleting...")
+
+        if path.is_dir():
+            shutil.rmtree(path)
+        else:
+            path.unlink()
+
     def _check_apps(self) -> bool:
         """Check whether every selected app in the configured app list."""
 
         for app in self._selected_apps:
             if app not in self._apps_dict:
-                logging.error(f"application not configured: {app}")
+                self._LOGGER.error(f"application not configured: {app}")
                 return False
 
         return True
@@ -236,10 +282,12 @@ class Config:
                 self._delete_old(dest_path)
 
             if not src_path.exists():
-                logging.warning(f"file not found: {file}: skip backing up this file")
+                self._LOGGER.warning(
+                    f"file not found: {file}: skip backing up this file"
+                )
                 continue
 
-            logging.info(f"copying {file} to {dest_path}...")
+            self._LOGGER.info(f"copying {file} to {dest_path}...")
 
             if src_path.is_dir():
                 shutil.copytree(src_path, dest_path, dirs_exist_ok=True, ignore=ignore)
@@ -258,12 +306,12 @@ class Config:
                 self._delete_old(dest_path)
 
             if not src_path.exists():
-                logging.warning(
+                self._LOGGER.warning(
                     f"file not found: {src_path}: skip setting up this file"
                 )
                 continue
 
-            logging.info(f"copying {src_path} to {dest_path}...")
+            self._LOGGER.info(f"copying {src_path} to {dest_path}...")
 
             if src_path.is_dir():
                 shutil.copytree(src_path, dest_path, dirs_exist_ok=True, ignore=ignore)
@@ -290,7 +338,7 @@ class Config:
         for app in apps:
             app_dict = self._apps_dict[app]
 
-            logging.info(f"doing {app} backup...")
+            self._LOGGER.info(f"doing {app} backup...")
             self._safe_run_hooks("pre_backup", app_dict, app=app)
 
             if "files" in app_dict:
@@ -317,7 +365,7 @@ class Config:
         for app in apps:
             app_dict = self._apps_dict[app]
 
-            logging.info(f"doing {app} setup...")
+            self._LOGGER.info(f"doing {app} setup...")
             self._safe_run_hooks("pre_setup", app_dict, app=app)
 
             if "files" in app_dict:
@@ -333,6 +381,8 @@ class Config:
 def dotbackup(args=None) -> int:
     """The dotbackup CLI"""
 
+    logger = init_logger()
+
     if args is None:
         args = sys.argv[1:]
 
@@ -346,12 +396,14 @@ def dotbackup(args=None) -> int:
     try:
         return Config.parse_args(args).backup()
     except RuntimeError as e:
-        logging.error(" ".join(e.args))
+        logger.error(" ".join(e.args))
         return 1
 
 
 def dotsetup(args=None) -> int:
     """The dotsetup CLI"""
+
+    logger = init_logger()
 
     if args is None:
         args = sys.argv[1:]
@@ -366,12 +418,14 @@ def dotsetup(args=None) -> int:
     try:
         return Config.parse_args(args).setup()
     except RuntimeError as e:
-        logging.error(" ".join(e.args))
+        logger.error(" ".join(e.args))
         return 1
 
 
 def main(args=None):
     """The dotbackup.py CLI"""
+
+    logger = init_logger()
 
     if args is None:
         args = sys.argv[1:]
@@ -386,7 +440,7 @@ def main(args=None):
     try:
         config = Config.parse_args(args)
     except RuntimeError as e:
-        logging.error(" ".join(e.args))
+        logger.error(" ".join(e.args))
         return 1
 
     if args.command == "backup":
