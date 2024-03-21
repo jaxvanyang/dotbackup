@@ -20,6 +20,8 @@ jobs:
           python-version: '>=3.8'
       - name: Install dependencies
         run: |
+          apt-get update
+          apt-get install -y --no-install-recommends asciidoctor
           python -m pip install --upgrade pip
           pip install -U build
       - name: Build
