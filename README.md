@@ -23,6 +23,7 @@ and [dotsetup(1)](dotsetup.1.adoc) for details.
 
 - Simple configuration.
 - Custom hooks.
+- Detailed logs.
 
 ## Installation
 
