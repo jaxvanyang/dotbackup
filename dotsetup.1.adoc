@@ -43,7 +43,7 @@ dotsetup knows how to copy them back.
 	Print the version information and exit.
 
 *--clean*::
-	Do clean backup, i.e., delete old backup files before backup.
+	Do clean setup, i.e., delete old configuration files before setup.
 
 *--log-level* _LOG_LEVEL_::
 	Set the log level, _LOG_LEVEL_ may be one of DEBUG, INFO, WARNING, ERROR,
