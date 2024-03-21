@@ -1,5 +1,7 @@
 # dotbackup ignores
 .dotbackup_test/
+dotbackup.1
+dotsetup.1
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
