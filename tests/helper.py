@@ -1,203 +1,168 @@
 import filecmp
+import logging
 import os
 import random
 import shutil
 import string
 import sys
+from collections.abc import Iterable, Iterator
+from pathlib import Path
 
-import dotbackup
+from dotbackup import Config
 
 TEST_CONFIG_DIR = f"{os.path.dirname(__file__)}/configs"
-TEST_HOME = "/tmp/dotbackup_test"
+TEST_HOME = ".dotbackup_test"
 CONFIG_DIR = f"{TEST_HOME}/.config"
 CONFIG_FILE = f"{CONFIG_DIR}/dotbackup/dotbackup.yml"
 BACKUP_DIR = f"{TEST_HOME}/backup"
 
-BASIC_CONFIG_DICT = {
-    "backup_dir": "~/backup",
-    "apps": {
-        "app_a": {
-            "files": ["~/.config/app_a"],
-            "pre_backup": ["echo app_a pre_backup"],
-            "post_backup": ["echo app_a post_backup"],
-            "pre_setup": ["echo app_a pre_setup"],
-            "post_setup": ["echo app_a post_setup"],
-        },
-        "app_b": {
-            "files": ["~/.config/app_b/b1.txt", "~/.config/app_b/b2.txt"],
-            "pre_backup": ["echo app_b pre_backup"],
-            "post_backup": ["echo app_b post_backup"],
-            "pre_setup": ["echo app_b pre_setup"],
-            "post_setup": ["echo app_b post_setup"],
-        },
-    },
-    "pre_backup": ["echo pre_backup"],
-    "post_backup": ["echo post_backup"],
-    "pre_setup": ["echo pre_setup"],
-    "post_setup": ["echo post_setup"],
-}
-BASIC_CONFIG = dotbackup.Config(BASIC_CONFIG_DICT)
-ONLY_HOOKS_DICT = {
-    "backup_dir": "~/backup",
-    "apps": {
-        "app_a": {
-            "pre_backup": ["echo app_a pre_backup"],
-            "post_backup": ["echo app_a post_backup"],
-            "pre_setup": ["echo app_a pre_setup"],
-            "post_setup": ["echo app_a post_setup"],
-        },
-        "app_b": {
-            "pre_backup": ["echo app_b pre_backup"],
-            "post_backup": ["echo app_b post_backup"],
-            "pre_setup": ["echo app_b pre_setup"],
-            "post_setup": ["echo app_b post_setup"],
-        },
-    },
-    "pre_backup": ["echo pre_backup"],
-    "post_backup": ["echo post_backup"],
-    "pre_setup": ["echo pre_setup"],
-    "post_setup": ["echo post_setup"],
-}
-ONLY_HOOKS_CONFIG = dotbackup.Config(ONLY_HOOKS_DICT)
-
-APPS_CHOICE = [[], ["app_a"], ["app_b"], ["app_a", "app_b"], ["app_b", "app_a"]]
-CONFIG_PATHS = [
-    "basic.yml",
-    "clean.yml",
-    "complex_script.yml",
-    "ignore.yml",
-    "only_hooks.yml",
-]
+# not use monkeypatch because that may break modification to os.environ
+os.environ["HOME"] = TEST_HOME
 
 
-class CleanConfig:
-    dict = {
-        "backup_dir": "~/backup",
-        "clean": True,
-    }
-    config = dotbackup.Config(dict)
+def clean_test(monkeypatch) -> None:
+    """Set up clean environment for test."""
 
-
-class IgnoreConfig:
-    dict = {
-        "backup_dir": "~/backup",
-        "apps": {
-            "app": {
-                "files": [
-                    "~/.config/app",
-                    "~/.config/app/global_ignore",
-                    "~/.config/app/app_ignore",
-                ],
-                "ignore": ["app_ignore"],
-            },
-        },
-        "ignore": ["global_ignore"],
-    }
-    config = dotbackup.Config(dict)
-
-    global_ignore_file = f"{CONFIG_DIR}/app/ignore/global_ignore"
-    app_ignore_file = f"{CONFIG_DIR}/app/ignore/app_ignore"
-    global_noignore_file = f"{CONFIG_DIR}/app/global_ignore"
-    app_noignore_file = f"{CONFIG_DIR}/app/app_ignore"
-    files = (
-        global_ignore_file,
-        app_ignore_file,
-        global_noignore_file,
-        app_noignore_file,
-    )
-
-    global_ignore_backup = f"{BACKUP_DIR}/app/.config/app/ignore/global_ignore"
-    app_ignore_backup = f"{BACKUP_DIR}/app/.config/app/ignore/app_ignore"
-    global_noignore_backup = f"{BACKUP_DIR}/app/.config/app/global_ignore"
-    app_noignore_backup = f"{BACKUP_DIR}/app/.config/app/app_ignore"
-    backups = (
-        global_ignore_backup,
-        app_ignore_backup,
-        global_noignore_backup,
-        app_noignore_backup,
-    )
-
-
-def rm_test_home():
-    if not os.path.exists(TEST_HOME):
-        return
-
-    if os.path.isfile(TEST_HOME):
-        os.unlink(TEST_HOME)
-
-    shutil.rmtree(TEST_HOME)
-
-
-def prepare_test(monkeypatch):
-    monkeypatch.setattr(dotbackup, "HOME", TEST_HOME)
     monkeypatch.setattr(sys, "argv", sys.argv[:0])
-    rm_test_home()
+
+    if os.path.isdir(TEST_HOME):
+        shutil.rmtree(TEST_HOME)
 
 
-def get_config_path(path):
-    test_config_path = f"{TEST_CONFIG_DIR}/{path}"
+def get_config_path(name) -> str:
+    """Return path of test YAML configuration.
 
-    if os.path.isfile(test_config_path):
-        return test_config_path
+    Keyword arguments:
+    name -- the YAML configuration name
+    """
 
-    return path
-
-
-def get_config(path):
-    if path == "basic.yml":
-        return BASIC_CONFIG
-    elif path == "only_hooks.yml":
-        return ONLY_HOOKS_CONFIG
-    elif path == "clean.yml":
-        return CleanConfig.config
-    elif path == "ignore.yml":
-        return IgnoreConfig.config
-
-    return dotbackup.parse_config(get_config_path(path))
+    return f"{TEST_CONFIG_DIR}/{name}.yml"
 
 
-def random_str(length=0):
+def get_config(name) -> Config:
+    """Return a Config object of the test YAML configuration.
+
+    Keyword arguments:
+    name -- the YAML configuration name
+    """
+
+    return Config.fromfile(get_config_path(name))
+
+
+def random_str(length=0) -> str:
+    """Return a random string which is not empty."""
     length = length or random.randint(1, 50)
     return "".join(random.choices(string.ascii_uppercase, k=length))
 
 
 def cp(src, dst):
-    if os.path.isfile(src):
-        os.makedirs(os.path.dirname(dst), exist_ok=True)
-        shutil.copy2(src, dst)
-    elif os.path.isdir(src):
+    """Copy src to dst, create parent directories if necessary."""
+
+    if os.path.isdir(src):
         shutil.copytree(src, dst, dirs_exist_ok=True)
     else:
-        raise FileNotFoundError(src)
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        shutil.copy2(src, dst)
 
 
-def mkdir(path):
-    os.makedirs(path, exist_ok=True)
+def file_iterator(config: Config) -> Iterator:
+    """Iterate files in the config."""
+
+    for _, app_dict in config._apps_dict.items():
+        if "files" not in app_dict:
+            continue
+
+        for file in app_dict["files"]:
+            yield file
 
 
-def create_file(path, content=""):
+def backup_file_iterator(config: Config) -> Iterator:
+    """Iterate backup files of the config."""
+
+    return map(lambda f: str(config._get_backup_file_path(f)), file_iterator(config))
+
+
+def create_file(path: str, content="") -> None:
+    """Create a file in path with the content."""
+
+    path = Config._normpath(path)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, mode="w") as fp:
         fp.write(content)
 
 
-def read_file(path):
-    with open(path) as fp:
-        return fp.read()
+def filediff(f1: str, f2: str) -> bool:
+    """Return True if f1 and f2 are identical, False otherwise."""
+    f1 = Config._normpath(f1)
+    f2 = Config._normpath(f2)
+    assert os.path.isfile(f1)
+    assert os.path.isfile(f2)
+
+    return filecmp.cmp(f1, f2, shallow=False)
 
 
-def generate_hook_out(command="backup", apps=[]):
-    if apps == []:
-        apps = ["app_a", "app_b"]
+def dirdiff(dir1: str, dir2: str, recursive=True) -> bool:
+    """Return True if dir1 and dir2 seem identical, False otherwise."""
 
-    out = f"pre_{command}\n"
-    for app in apps:
-        out += f"{app} pre_{command}\n{app} post_{command}\n"
-    out += f"post_{command}\n"
+    def recursive_check(dcmp) -> bool:
+        if any([dcmp.left_only, dcmp.right_only, dcmp.diff_files]):
+            return False
+        for sub_dcmp in dcmp.subdirs.values():
+            if not recursive_check(sub_dcmp):
+                return False
+        return True
 
-    return out
+    dir1 = Config._normpath(dir1)
+    dir2 = Config._normpath(dir2)
+    assert os.path.isdir(dir1)
+    assert os.path.isdir(dir2)
 
-
-def dirdiff(dir1, dir2):
     dcmp = filecmp.dircmp(dir1, dir2)
-    return not (dcmp.left_only or dcmp.right_only or dcmp.diff_files)
+    if not recursive:
+        return not any([dcmp.left_only, dcmp.right_only, dcmp.diff_files])
+
+    return recursive_check(dcmp)
+
+
+def validate(files1: Iterable, files2: Iterable, recursive=True) -> bool:
+    """Validate the backup or setup.
+
+    Return True if each existing file in files1 is identical to coresponding file in
+    files2, False otherwise."""
+
+    files1 = map(lambda f: Config._normpath(f), files1)
+    files2 = map(lambda f: Config._normpath(f), files2)
+    for f1, f2 in zip(files1, files2):
+        if not os.path.exists(f1):
+            continue
+
+        if (os.path.isfile(f1) and not filediff(f1, f2)) or (
+            os.path.isdir(f1) and not dirdiff(f1, f2, recursive)
+        ):
+            logging.debug(f"{f1} and {f2} differ")
+            return False
+
+    return True
+
+
+def validate_backup(config: Config, recursive=True) -> bool:
+    return validate(file_iterator(config), backup_file_iterator(config), recursive)
+
+
+def validate_setup(config: Config, recursive=True) -> bool:
+    return validate(backup_file_iterator(config), file_iterator(config), recursive)
+
+
+def rmdir(path: str) -> None:
+    """Remove directory in path if it exists, i.e., rm -rf."""
+
+    path = Config._normpath(path)
+    if not os.path.isdir(path):
+        return
+    shutil.rmtree(path)
+
+
+def mkdir(path: str) -> None:
+    """Create directory in path, i.e., mkdir -p."""
+
+    Path(Config._normpath(path)).mkdir(parents=True, exist_ok=True)

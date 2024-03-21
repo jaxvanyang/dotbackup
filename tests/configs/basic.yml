@@ -4,30 +4,30 @@ apps:
     files:
       - ~/.config/app_a
     pre_backup:
-      - echo app_a pre_backup
+      - echo app_a pre_backup $BACKUP_DIR
     post_backup:
-      - echo app_a post_backup
+      - echo app_a post_backup $BACKUP_DIR
     pre_setup:
-      - echo app_a pre_setup
+      - echo app_a pre_setup $BACKUP_DIR
     post_setup:
-      - echo app_a post_setup
+      - echo app_a post_setup $BACKUP_DIR
   app_b:
     files:
       - ~/.config/app_b/b1.txt
       - ~/.config/app_b/b2.txt
     pre_backup:
-      - echo app_b pre_backup
+      - echo app_b pre_backup $BACKUP_DIR
     post_backup:
-      - echo app_b post_backup
+      - echo app_b post_backup $BACKUP_DIR
     pre_setup:
-      - echo app_b pre_setup
+      - echo app_b pre_setup $BACKUP_DIR
     post_setup:
-      - echo app_b post_setup
+      - echo app_b post_setup $BACKUP_DIR
 pre_backup:
-  - echo pre_backup
+  - echo pre_backup $BACKUP_DIR
 post_backup:
-  - echo post_backup
+  - echo post_backup $BACKUP_DIR
 pre_setup:
-  - echo pre_setup
+  - echo pre_setup $BACKUP_DIR
 post_setup:
-  - echo post_setup
+  - echo post_setup $BACKUP_DIR

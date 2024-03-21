@@ -1,0 +1,170 @@
+= dotbackup(1)
+Jax Young <jaxvanyang@gmail.com>
+:doctype: manpage
+:manmanual: DOTBACKUP
+:mansource: DOTBACKUP
+:man-linkstyle: pass:[blue R < >]
+
+== Name
+
+dotbackup - YAML config based backup utility
+
+== Synopsis
+
+*dotbackup* [-h|--help] [-c|--config _CONFIG_] [-V|--version] [--clean]
+[--log-level _LOG_LEVEL_] [_APP_...]
+
+== Description
+
+Usually people maintain backup and setup scripts along with their dotfiles. But
+these scripts always contain a lot of repeat codes, and writing them is not fun!
+dotbackup and dotsetup are here to help.
+
+With these two tools, you only need to write a simple configuration and they
+will know how to back up and set up your dotfiles. See the _CONFIGURATION_
+section for the configuration definition.
+
+When you invoke dotbackup, it copies each application's _files_ to the
+_backup_dir_ (if no _app_ provided, all application's _files_ will be copied).
+And dotsetup does the opposite. Backup file's relative path to the _backup_dir_
+is the same as the original file's relative path to the home directory, so
+dotsetup knows how to copy them back.
+
+== Options
+
+*-h, --help*::
+	Show help message and exit.
+
+*-c, --config*=_CONFIG_::
+	Set configuration file (default: ~/.config/dotbackup/dotbackup.yml). See
+	_CONFIGURATION_ section for the expected structure of this file.
+
+*-V, --version*::
+	Print the version information and exit.
+
+*--clean*::
+	Do clean backup, i.e., delete old backup files before backup.
+
+*--log-level* _LOG_LEVEL_::
+	Set the log level, _LOG_LEVEL_ may be one of DEBUG, INFO, WARNING, ERROR,
+	CRITICAL. The default is INFO.
+
+== Configuration
+
+The default configuration file path is _~/.config/dotbackup/dotbackup.yml_. The
+configuration file uses YAML syntax, following are the configuration keyword
+definitions.
+
+_backup_dir_::
+	A string. The directory where backup files are stored.
+
+_clean_::
+	A boolean. Whether to delete files in destination path before backup and
+	setup. The default is `false`. Option *--clean* override this configuration.
+
+_ignore_::
+	A list of glob strings. The global ignored file patterns. Files that matches
+	one of these patterns will be ignored. But files that are directly specified
+	in _apps.<app>.files_ are not ignored.
+
+_apps.<app>.files_::
+	A list of path strings. The files to be backed up of the application _<app>_,
+	_<app>_ can be any string. File paths *MUST* be relative to the home directory
+	due to implementation. You can use _HOOKS_ to manipulate other files.
+
+_apps.<app>.ignore_::
+	A list of glob strings. The application level ignored file patterns. Files
+	that matches one of these patterns will be ignored when back up and set up
+	_<app>_. But files that are directly specified in _apps.<app>.files_ are not
+	ignored.
+
+_apps.<app>.<pre_backup|post_backup|pre_setup|post_setup>_::
+	A list of script strings. The application level custom hooks, _<app>_ can be
+	any string. See _HOOKS_ and _EXAMPLES_ for details.
+
+_<pre_backup|post_backup|pre_setup|post_setup>_::
+	A list of script strings. The global custom hooks. See _HOOKS_ and _EXAMPLES_
+	for details.
+
+== Hooks
+
+Technically, hooks are just shell scripts to be executed by `sh -s`. They can be
+divide into backup hooks and setup hooks. The execution order is indicated by
+their names. For example, the execution order of backup hooks may be like this:
+
+[%hardbreaks]
+pre_backup
+apps.app1.pre_backup
+copy _apps.app1.files_
+apps.app1.post_backup
+apps.app2.pre_backup
+copy _apps.app2.files_
+apps.app2.post_backup
+post_backup
+
+And in hooks, you can use the environment variable _BACKUP_DIR_ which is set to
+_backup_dir_. So you can use hooks to things beyond copying _files_, e.g., file
+post-processing.
+
+== Examples
+
+First of all, dotbackup can back up itself:
+
+....
+backup_dir: ~/backup
+apps:
+  dotbackup:
+    files: [~/.config/dotbackup/dotbackup.yml]
+....
+
+A configuration back up Vim and Neovim:
+
+....
+backup_dir: ~/backup
+apps:
+  vim:
+    files: [~/.vimrc]
+  nvim:
+    files:
+      - ~/.config/nvim/init.lua
+      - ~/.config/nvim/lua
+....
+
+A configuration which use hooks to generate timestamp and make Git commit:
+
+....
+backup_dir: ~/backup
+apps:
+  vim:
+    files: [~/.vimrc]
+  nvim:
+    files:
+      - ~/.config/nvim/init.lua
+      - ~/.config/nvim/lua
+post_backup:
+  - date > "$BACKUP_DIR/timestamp"
+  - |
+    set -e
+    cd $BACKUP_DIR
+    git commit -am "backup of $(date)"
+    git push
+....
+
+A configuration which ignore some files:
+
+....
+backup_dir: ~/backup
+apps:
+  nvim:
+    files: [~/.config/nvim]
+    ignore: [lazy-lock.json]
+ignore: [.git]
+....
+
+== Resources
+
+Project website: https://github.com/jaxvanyang/dotbackup
+
+== See also
+
+dotsetup(1)
