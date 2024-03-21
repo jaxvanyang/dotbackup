@@ -11,7 +11,7 @@ from pathlib import Path
 
 from ruamel.yaml import YAML
 
-__VERSION__ = "1.0.0"
+__VERSION__ = "1.0.1"
 
 
 class ColorFormatter(Formatter):
