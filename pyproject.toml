@@ -48,8 +48,8 @@ packages = ["src/dotbackup.py"]
 [tool.hatch.build.targets.wheel.hooks.custom]
 
 [tool.hatch.build.targets.wheel.shared-data]
-"dotbackup.1" = "/usr/share/man/man1/dotbackup.1"
-"dotsetup.1" = "/usr/share/man/man1/dotsetup.1"
+"dotbackup.1" = "share/man/man1/dotbackup.1"
+"dotsetup.1" = "share/man/man1/dotsetup.1"
 
 [tool.pytest.ini_options]
 pythonpath = ["src", "tests"]
