@@ -16,7 +16,8 @@ CONFIG_DIR = f"{TEST_HOME}/.config"
 CONFIG_FILE = f"{CONFIG_DIR}/dotbackup/dotbackup.yml"
 BACKUP_DIR = f"{TEST_HOME}/backup"
 
-# not use monkeypatch because that may break modification to os.environ
+# not use monkeypatch because that may break modification to os.environ,
+# i.e., setting env BACKUP_DIR would fail
 os.environ["HOME"] = TEST_HOME
 
 
