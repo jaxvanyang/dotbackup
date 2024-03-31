@@ -36,8 +36,10 @@ dotsetup knows how to copy them back.
 	Show help message and exit.
 
 *-c, --config*=_CONFIG_::
-	Set configuration file (default: ~/.config/dotbackup/dotbackup.yml). See
-	_CONFIGURATION_ section for the expected structure of this file.
+	Set configuration file path (default: _~/.config/dotbackup/dotbackup.yml_).
+	Configuration files under _~/.config/dotbackup_ can also be specified by their
+	basenames, e.g., _~/.config/dotbackup/config.yml_ can be specified by
+	_config_. See _CONFIGURATION_ section for configuration definition.
 
 *-V, --version*::
 	Print the version information and exit.

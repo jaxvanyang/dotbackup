@@ -12,11 +12,12 @@ from dotbackup import Config
 
 TEST_CONFIG_DIR = f"{os.path.dirname(__file__)}/configs"
 TEST_HOME = ".dotbackup_test"
-CONFIG_DIR = f"{TEST_HOME}/.config"
-CONFIG_FILE = f"{CONFIG_DIR}/dotbackup/dotbackup.yml"
+CONFIG_DIR = f"{TEST_HOME}/.config/dotbackup"
+CONFIG_FILE = f"{CONFIG_DIR}/dotbackup.yml"
 BACKUP_DIR = f"{TEST_HOME}/backup"
 
-# not use monkeypatch because that may break modification to os.environ
+# not use monkeypatch because that may break modification to os.environ,
+# i.e., setting env BACKUP_DIR would fail
 os.environ["HOME"] = TEST_HOME
 
 
