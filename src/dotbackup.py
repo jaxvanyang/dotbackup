@@ -49,7 +49,8 @@ def init_logger() -> Logger:
 class Config:
     """Configuration of dotbackup with helper functions."""
 
-    _DEFAULT_CONFIG_FILE = "~/.config/dotbackup/dotbackup.yml"
+    _CONFIG_DIR = "~/.config/dotbackup"
+    _DEFAULT_CONFIG_FILE = f"{_CONFIG_DIR}/dotbackup.yml"
     _YAML = YAML(typ="safe")
     _LOGGER = logging.getLogger(__name__)
 
@@ -83,7 +84,16 @@ class Config:
 
         cls._LOGGER.setLevel(args.log_level)
 
-        config = cls.fromfile(args.config)
+        if (
+            args.config.endswith(".yml")
+            or "/" in args.config
+            or os.path.isfile(args.config)
+        ):
+            config_file = args.config
+        else:
+            config_file = f"{cls._CONFIG_DIR}/{args.config}.yml"
+
+        config = cls.fromfile(config_file)
         if args.clean:
             config._dict["clean"] = True
         config._dict["selected_apps"] = list(args.app)
