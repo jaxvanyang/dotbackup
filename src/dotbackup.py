@@ -59,8 +59,8 @@ class Config:
     def __repr__(self) -> str:  # pragma: no cover
         return repr(self._dict)
 
-    def __eq__(self, other) -> bool:  # pragma: no cover
-        if type(self) is type(other):
+    def __eq__(self, other) -> bool:
+        if type(self) is not type(other):
             return False
 
         return self._dict == other._dict
