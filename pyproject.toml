@@ -22,7 +22,9 @@ classifiers = [
 	"Programming Language :: Python :: 3.12",
 	"License :: OSI Approved :: MIT License",
 	"Operating System :: POSIX",
-	"Development Status :: 5 - Production/Stable"
+	"Development Status :: 5 - Production/Stable",
+	"Topic :: System :: Archiving :: Backup",
+	"Intended Audience :: Developers",
 ]
 
 [project.scripts]
