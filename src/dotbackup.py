@@ -84,6 +84,10 @@ class Config:
 
         cls._LOGGER.setLevel(args.log_level)
 
+        if args.version:
+            cls.print_version()
+            sys.exit()
+
         if (
             args.config.endswith(".yml")
             or "/" in args.config
@@ -387,10 +391,6 @@ def dotbackup(args=None) -> int:
     parser = Config.dotbackup_parser()
     args = parser.parse_args(args)
 
-    if args.version:
-        Config.print_version()
-        return 0
-
     try:
         return Config.parse_args(args).backup()
     except RuntimeError as e:
@@ -408,10 +408,6 @@ def dotsetup(args=None) -> int:
 
     parser = Config.dotsetup_parser()
     args = parser.parse_args(args)
-
-    if args.version:
-        Config.print_version()
-        return 0
 
     try:
         return Config.parse_args(args).setup()
