@@ -30,8 +30,6 @@ def test_version(option, capfd):
     assert dotbackup.dotsetup([option]) == 0
     assert capfd.readouterr().out == f"dotbackup {dotbackup.__VERSION__}\n"
 
-    assert dotbackup.main([option]) == 0
-    assert capfd.readouterr().out == f"dotbackup {dotbackup.__VERSION__}\n"
     assert dotbackup.main(["backup", option]) == 0
     assert capfd.readouterr().out == f"dotbackup {dotbackup.__VERSION__}\n"
     assert dotbackup.main(["setup", option]) == 0

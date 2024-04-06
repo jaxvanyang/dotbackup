@@ -146,18 +146,6 @@ class Config:
         parser = ArgumentParser(
             prog="dotbackup.py", description="YAML config based backup utility."
         )
-        parser.add_argument(
-            "-V",
-            "--version",
-            action="store_true",
-            help="Print the version number of dotbackup and exit.",
-        )
-        parser.add_argument(
-            "--log-level",
-            default="INFO",
-            choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
-            help="Set the log level (default: INFO).",
-        )
         subparsers = parser.add_subparsers(
             title="subcommands",
             dest="command",
@@ -442,6 +430,10 @@ def main(args=None):
 
     parser = Config.main_parser()
     args = parser.parse_args(args)
+
+    if not args.command:
+        parser.print_help()
+        return 1
 
     if args.version:
         Config.print_version()
