@@ -11,8 +11,8 @@ dotbackup - YAML config based backup utility
 
 == Synopsis
 
-*dotbackup* [-h|--help] [-c|--config _CONFIG_] [-V|--version] [--clean]
-[--log-level _LOG_LEVEL_] [_APP_...]
+*dotbackup* [-h|--help] [-c|--config _CONFIG_] [-l|--list] [-V|--version]
+[--clean] [--log-level _LOG_LEVEL_] [_APP_...]
 
 == Description
 
@@ -40,6 +40,9 @@ dotsetup knows how to copy them back.
 	Configuration files under _~/.config/dotbackup_ can also be specified by their
 	basenames, e.g., _~/.config/dotbackup/config.yml_ can be specified by
 	_config_. See _CONFIGURATION_ section for configuration definition.
+
+*-l, --list*::
+	List configured application and exit.
 
 *-V, --version*::
 	Print the version information and exit.

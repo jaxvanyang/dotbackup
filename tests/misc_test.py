@@ -26,15 +26,18 @@ def test_empty():
 @pytest.mark.parametrize("option", ["-V", "--version"])
 def test_version(option, capfd):
     with pytest.raises(SystemExit):
-        assert dotbackup.dotbackup([option]) == 0
-        assert capfd.readouterr().out == f"dotbackup {dotbackup.__VERSION__}\n"
-        assert dotbackup.dotsetup([option]) == 0
-        assert capfd.readouterr().out == f"dotbackup {dotbackup.__VERSION__}\n"
+        dotbackup.dotbackup([option])
+    assert capfd.readouterr().out == f"dotbackup {dotbackup.__VERSION__}\n"
+    with pytest.raises(SystemExit):
+        dotbackup.dotsetup([option])
+    assert capfd.readouterr().out == f"dotbackup {dotbackup.__VERSION__}\n"
 
-        assert dotbackup.main(["backup", option]) == 0
-        assert capfd.readouterr().out == f"dotbackup {dotbackup.__VERSION__}\n"
-        assert dotbackup.main(["setup", option]) == 0
-        assert capfd.readouterr().out == f"dotbackup {dotbackup.__VERSION__}\n"
+    with pytest.raises(SystemExit):
+        dotbackup.main(["backup", option])
+    assert capfd.readouterr().out == f"dotbackup {dotbackup.__VERSION__}\n"
+    with pytest.raises(SystemExit):
+        dotbackup.main(["setup", option])
+    assert capfd.readouterr().out == f"dotbackup {dotbackup.__VERSION__}\n"
 
 
 def test_shortcut(monkeypatch):

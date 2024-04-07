@@ -131,3 +131,22 @@ class TestBasic:
         assert helper.validate_setup(self._config)
         for file in self._files:
             assert not os.path.isfile(file)
+
+    @pytest.mark.parametrize("option", ["-l", "--list"])
+    def test_list(self, option, capfd):
+        """Test -l, --list option."""
+        expected_output = "\n".join(self._config._apps_dict.keys()) + "\n"
+
+        with pytest.raises(SystemExit):
+            dotbackup.dotbackup([option])
+        assert capfd.readouterr().out == expected_output
+        with pytest.raises(SystemExit):
+            dotbackup.dotsetup([option])
+        assert capfd.readouterr().out == expected_output
+
+        with pytest.raises(SystemExit):
+            dotbackup.main(["backup", option])
+        assert capfd.readouterr().out == expected_output
+        with pytest.raises(SystemExit):
+            dotbackup.main(["setup", option])
+        assert capfd.readouterr().out == expected_output

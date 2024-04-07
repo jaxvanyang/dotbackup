@@ -98,6 +98,11 @@ class Config:
             config_file = f"{cls._CONFIG_DIR}/{args.config}.yml"
 
         config = cls.fromfile(config_file)
+
+        if args.list:
+            config._list_apps()
+            sys.exit()
+
         if args.clean:
             config._dict["clean"] = True
         config._dict["selected_apps"] = list(args.app)
@@ -115,6 +120,12 @@ class Config:
             "--config",
             default=cls._DEFAULT_CONFIG_FILE,
             help=f"Configuration file (default: {cls._DEFAULT_CONFIG_FILE}).",
+        )
+        parser.add_argument(
+            "-l",
+            "--list",
+            action="store_true",
+            help="List configured applications and exit.",
         )
         parser.add_argument(
             "-V",
@@ -325,6 +336,10 @@ class Config:
         """Set environment variable."""
         os.environ["BACKUP_DIR"] = self._backup_dir
 
+    def _list_apps(self) -> None:
+        """List configured applications."""
+        print("\n".join(self._apps_dict.keys()))
+
     def backup(self) -> int:
         """Do backup."""
 
@@ -430,10 +445,6 @@ def main(args=None):
     if not args.command:
         parser.print_help()
         return 1
-
-    if args.version:
-        Config.print_version()
-        return 0
 
     try:
         config = Config.parse_args(args)
