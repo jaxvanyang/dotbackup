@@ -35,8 +35,8 @@ You can install from one of these package managers:
 Installing from a package manager gives you the two commands - `dotbackup` and
 `dotsetup`, and the manpages. But you can also download this single script:
 [dotbackup.py](./src/dotbackup.py). In fact, `dotbackup` and `dotsetup` are just
-shortcut commands of `dotbackup.py`, which means that `dotbackup` equals to
-`dotbackup.py backup` and `dotsetup` equals to `dotbackup.py setup`.
+shortcut commands of `dotbackup.py`, which means that `dotbackup` is equivalent
+to `dotbackup.py backup` and `dotsetup` is equivalent to `dotbackup.py setup`.
 
 ## Quick Start
 
