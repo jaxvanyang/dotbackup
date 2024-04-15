@@ -128,7 +128,7 @@ class Config:
             help="List configured applications and exit.",
         )
         parser.add_argument(
-            "-V",
+            "-v",
             "--version",
             action="store_true",
             help="Print the version number of dotbackup and exit.",

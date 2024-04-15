@@ -23,7 +23,7 @@ def test_empty():
     assert dotbackup.main(["setup"]) == 1
 
 
-@pytest.mark.parametrize("option", ["-V", "--version"])
+@pytest.mark.parametrize("option", ["-v", "--version"])
 def test_version(option, capfd):
     with pytest.raises(SystemExit):
         dotbackup.dotbackup([option])

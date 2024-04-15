@@ -11,7 +11,7 @@ dotsetup - YAML config based backup utility
 
 == Synopsis
 
-*dotsetup* [-h|--help] [-c|--config _CONFIG_] [-l|--list] [-V|--version]
+*dotsetup* [-h|--help] [-c|--config _CONFIG_] [-l|--list] [-v|--version]
 [--clean] [--log-level _LOG_LEVEL_] [_APP_...]
 
 == Description
@@ -44,7 +44,7 @@ dotsetup knows how to copy them back.
 *-l, --list*::
 	List configured application and exit.
 
-*-V, --version*::
+*-v, --version*::
 	Print the version information and exit.
 
 *--clean*::
