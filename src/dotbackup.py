@@ -84,10 +84,6 @@ class Config:
 
         cls._LOGGER.setLevel(args.log_level)
 
-        if args.version:
-            cls.print_version()
-            sys.exit()
-
         if (
             args.config.endswith(".yml")
             or "/" in args.config
@@ -130,8 +126,9 @@ class Config:
         parser.add_argument(
             "-v",
             "--version",
-            action="store_true",
-            help="Print the version number of dotbackup and exit.",
+            action="version",
+            version=f"dotbackup {__VERSION__}",
+            help="Show the version and exit.",
         )
         parser.add_argument(
             "--clean",
@@ -199,12 +196,6 @@ class Config:
         cls._add_arguments(parser, typ="setup")
 
         return parser
-
-    @staticmethod
-    def print_version() -> None:
-        """Print version information."""
-
-        print(f"dotbackup {__VERSION__}")
 
     @staticmethod
     def _normpath(path):
