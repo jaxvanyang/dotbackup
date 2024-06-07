@@ -78,3 +78,13 @@ INFO: copying /home/user/backup/.config/nvim/lua to /home/user/.config/nvim/lua.
 ## Documentation
 
 For more information, please read [dotbackup(1)](dotbackup.1.adoc) and [dotsetup(1)](dotsetup.1.adoc).
+
+## Show Your Support
+
+If you're using dotbackup, consider adding the badge to your project's `README.md`:
+
+```
+[![dotbackup-managed](https://img.shields.io/badge/dotbackup-managed-blue)](https://github.com/jaxvanyang/dotbackup)
+```
+
+[![dotbackup-managed](https://img.shields.io/badge/dotbackup-managed-blue)](https://github.com/jaxvanyang/dotbackup)
