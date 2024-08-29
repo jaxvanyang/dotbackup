@@ -128,7 +128,7 @@ def dirdiff(dir1: str, dir2: str, recursive=True) -> bool:
 def validate(files1: Iterable, files2: Iterable, recursive=True) -> bool:
     """Validate the backup or setup.
 
-    Return True if each existing file in files1 is identical to coresponding file in
+    Return True if each existing file in files1 is identical to corresponding file in
     files2, False otherwise."""
 
     files1 = map(lambda f: Config._normpath(f), files1)
