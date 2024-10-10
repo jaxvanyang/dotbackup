@@ -1,5 +1,6 @@
 # dotbackup ignores
 .dotbackup_test/
+.pybuild
 dotbackup.1
 dotsetup.1
 

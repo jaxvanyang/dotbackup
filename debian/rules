@@ -1,0 +1,16 @@
+#!/usr/bin/make -f
+
+# export DH_VERBOSE=1
+export PYBUILD_NAME=dotbackup
+export PYBUILD_SYSTEM=pyproject
+export PYBUILD_TEST_PYTEST=1
+export PYBUILD_AFTER_TEST=rm -rf .dotbackup_test
+
+%:
+	dh $@ --with python3 --buildsystem=pybuild
+
+override_dh_auto_clean:
+	rm -rf *.1
+	dh_auto_clean
+
+# vim:ft=make

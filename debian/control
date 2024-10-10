@@ -1,0 +1,15 @@
+Source: dotbackup
+Maintainer: Jax Young <jaxvanyang@gmail.com>
+Section: utils
+Priority: optional
+Standards-Version: 4.6.2
+Build-Depends: debhelper-compat (= 13), debhelper (>= 11~), dh-python,
+ pybuild-plugin-pyproject, python3-all, python3-setuptools, python3-hatchling,
+ asciidoctor, python3-pytest, python3-ruamel.yaml
+X-Python3-Version: >= 3.8
+
+Package: dotbackup
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}, python3-ruamel.yaml
+Description: YAML config based backup utility
+ Useful for dotfile backup.
