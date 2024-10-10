@@ -55,4 +55,3 @@ packages = ["src/dotbackup.py"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src", "tests"]
-addopts = ["--import-mode=importlib"]
