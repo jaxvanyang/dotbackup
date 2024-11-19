@@ -27,10 +27,13 @@ and [dotsetup(1)](dotsetup.1.adoc) for details.
 
 ## Installation
 
-You can install from one of these package managers:
+You can install it from one of these package managers:
 
 - [PyPI](https://pypi.org/project/dotbackup)
 - [AUR](https://aur.archlinux.org/packages/dotbackup)
+
+If you are using a Debian-based system, you can install the pre-built deb
+package from [the latest release](https://github.com/jaxvanyang/dotbackup/releases/latest).
 
 Installing from a package manager gives you the two commands - `dotbackup` and
 `dotsetup`, and the manpages. But you can also download this single script:
