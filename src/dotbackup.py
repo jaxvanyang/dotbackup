@@ -93,6 +93,11 @@ class Config:
         else:
             config_file = f"{cls._CONFIG_DIR}/{args.config}.yml"
 
+        config_file_path = Path(cls._normpath(config_file))
+        if not config_file_path.is_file():
+            cls._LOGGER.error(f"configuration file doesn't exist: {config_file}")
+            sys.exit(1)
+
         config = cls.fromfile(config_file)
 
         if args.list:
