@@ -161,7 +161,10 @@ class Config:
         """Return argument parser for dotbackup.py."""
 
         parser = ArgumentParser(
-            prog="dotbackup.py", description="YAML config based backup utility."
+            prog="dotbackup.py",
+            description="YAML config based backup utility.",
+            epilog="""NOTE: This project has been deprecated, please use its successor
+                at https://github.com/jaxvanyang/dotbackup.rs""",
         )
         subparsers = parser.add_subparsers(
             title="subcommands",
@@ -185,7 +188,10 @@ class Config:
         """Return argument parser for dotbackup."""
 
         parser = ArgumentParser(
-            prog="dotbackup", description="Do backup based on the YAML configuration."
+            prog="dotbackup",
+            description="Do backup based on the YAML configuration.",
+            epilog="""NOTE: This project has been deprecated, please use its successor
+                at https://github.com/jaxvanyang/dotbackup.rs""",
         )
         cls._add_arguments(parser)
 
@@ -196,7 +202,10 @@ class Config:
         """Return argument parser for dotsetup."""
 
         parser = ArgumentParser(
-            prog="dotsetup", description="Do setup based on the YAML configuration."
+            prog="dotsetup",
+            description="Do setup based on the YAML configuration.",
+            epilog="""NOTE: This project has been deprecated, please use its successor
+                at https://github.com/jaxvanyang/dotbackup.rs""",
         )
         cls._add_arguments(parser, typ="setup")
 
