@@ -11,6 +11,10 @@
 [![Test: pytest](https://img.shields.io/badge/test-pytest-orange)](https://pytest.org)
 [![Codecov](https://codecov.io/gh/jaxvanyang/dotbackup/graph/badge.svg)](https://codecov.io/gh/jaxvanyang/dotbackup)
 
+> [!NOTE]
+> This project has been deprecated and replaced by its Rust implementation at [dotbackup.rs](https://github.com/jaxvanyang/dotbackup.rs).
+> Sorry for the inconvenience.
+
 Usually people maintain backup and setup scripts along with their dotfiles. But
 these scripts always contain a lot of repeat codes, and writing them is not fun!
 `dotbackup` and `dotsetup` are here to help.
